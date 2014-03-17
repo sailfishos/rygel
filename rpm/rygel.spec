@@ -69,6 +69,7 @@ find %{buildroot} -name '*.la' -exec rm -f {} ';'
 
 rm %{buildroot}/%{_datadir}/applications/rygel.desktop
 rm %{buildroot}/%{_datadir}/applications/rygel-preferences.desktop
+rm -rf %{buildroot}/%{_datadir}/icons/hicolor/*/apps/rygel*
 
 %post
 /sbin/ldconfig
@@ -79,20 +80,21 @@ rm %{buildroot}/%{_datadir}/applications/rygel-preferences.desktop
 %files -f %{name}.lang
 %config %{_sysconfdir}/rygel.conf
 %{_bindir}/rygel
-%{_bindir}/rygel-preferences
 %{_libdir}/librygel*.so.*
-%{_libdir}/rygel-2.0/engines/librygel-media-engine-simple.so
-%{_libdir}/rygel-2.0/engines/media-engine-simple.plugin
+%{_libdir}/rygel-2.2/engines/*
+%{_libdir}/rygel-2.2/plugins/external.plugin
+%{_libdir}/rygel-2.2/plugins/librygel-external.so
+%{_libdir}/rygel-2.2/plugins/librygel-mpris.so
+%{_libdir}/rygel-2.2/plugins/mpris.plugin
 %{_datadir}/rygel/
-%{_datadir}/applications/rygel*
 %{_datadir}/dbus-1/services/org.gnome.Rygel1.service
 
 %files tracker
-%{_libdir}/rygel-2.0/plugins/librygel-tracker.so
-%{_libdir}/rygel-2.0/plugins/tracker.plugin
+%{_libdir}/rygel-2.2/plugins/librygel-tracker.so
+%{_libdir}/rygel-2.2/plugins/tracker.plugin
 
 %files devel
-%doc %{_datadir}/gtk-doc/html/librygel*
 %{_libdir}/librygel-*.so
-%{_includedir}/rygel-2.0
+%{_includedir}/rygel-2.2
 %{_libdir}/pkgconfig/rygel*.pc
+%{_datadir}/vala/vapi/rygel-*
