@@ -11,11 +11,11 @@ Source0:       ftp://ftp.gnome.org/pub/GNOME/sources/%{name}/0.20/%{name}-%{vers
 BuildRequires: gnome-common
 BuildRequires: dbus-glib-devel
 BuildRequires: desktop-file-utils
-#BuildRequires: gstreamer1-devel
-#BuildRequires: gstreamer1-plugins-base-devel
+BuildRequires: pkgconfig(gstreamer-1.0)
+BuildRequires: pkgconfig(gstreamer-plugins-base-1.0)
 BuildRequires: gupnp-devel
 BuildRequires: gupnp-av-devel
-#BuildRequires: gupnp-dlna-devel
+BuildRequires: gupnp-dlna-devel
 BuildRequires: libgee-devel
 BuildRequires: libsoup-devel
 #BuildRequires: libunistring-devel
@@ -23,7 +23,6 @@ BuildRequires: libuuid-devel
 BuildRequires: sqlite-devel
 BuildRequires: tracker-devel
 BuildRequires: intltool
-#BuildRequires: gupnp-dlna-devel
 
 %description
 Rygel is a home media solution that allows you to easily share audio, video and
@@ -55,7 +54,7 @@ A plugin for rygel to use tracker to locate media on the local machine.
 %setup -q -n %{name}-%{version}/%{name}
 
 %build
-%autogen release --enable-tracker-plugin --disable-silent-rules --with-media-engine=simple
+%autogen release --enable-tracker-plugin --disable-silent-rules
 
 make %{?_smp_mflags} V=1
 
@@ -86,6 +85,10 @@ rm -rf %{buildroot}/%{_datadir}/icons/hicolor/*/apps/rygel*
 %{_libdir}/rygel-2.2/plugins/librygel-external.so
 %{_libdir}/rygel-2.2/plugins/librygel-mpris.so
 %{_libdir}/rygel-2.2/plugins/mpris.plugin
+%{_libdir}/rygel-2.2/plugins/librygel-media-export.so
+%{_libdir}/rygel-2.2/plugins/librygel-playbin.so
+%{_libdir}/rygel-2.2/plugins/media-export.plugin
+%{_libdir}/rygel-2.2/plugins/playbin.plugin
 %{_datadir}/rygel/
 %{_datadir}/dbus-1/services/org.gnome.Rygel1.service
 
