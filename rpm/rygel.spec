@@ -9,6 +9,7 @@ URL:           http://live.gnome.org/Rygel
 Source0:       ftp://ftp.gnome.org/pub/GNOME/sources/%{name}/0.20/%{name}-%{version}.tar.xz
 
 BuildRequires: gnome-common
+BuildRequires: gobject-introspection-devel >= 1.36
 BuildRequires: dbus-glib-devel
 BuildRequires: desktop-file-utils
 BuildRequires: pkgconfig(gstreamer-1.0)
