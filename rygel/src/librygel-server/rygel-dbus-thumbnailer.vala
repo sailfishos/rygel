@@ -21,7 +21,7 @@
 using Gee;
 
 [DBus (name = "org.freedesktop.thumbnails.Thumbnailer1")]
-interface Tumbler : GLib.Object {
+private interface Rygel.Tumbler : GLib.Object {
         public abstract async uint Queue (string[] uris,
                                           string[] mime_types,
                                           string flavor,
@@ -71,6 +71,7 @@ internal class Rygel.DbusThumbnailer : GLib.Object {
 
         if (this.timeout_id != 0) {
             Source.remove (this.timeout_id);
+            this.timeout_id = 0;
         }
 
         if (this.uris.size < THUMBNAIL_MAX_QUEUE_SIZE) {

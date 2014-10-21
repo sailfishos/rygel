@@ -107,9 +107,9 @@ public class Rygel.MediaRendererPlugin : Rygel.Plugin {
         return null;
     }
 
-    internal PlayerController get_controller () {
+    internal virtual PlayerController get_controller () {
         if (this.controller == null) {
-            this.controller = new PlayerController (this.get_player (),
+            this.controller = new DefaultPlayerController (this.get_player (),
                                                     this.get_protocol_info ());
         }
 
@@ -154,6 +154,11 @@ public class Rygel.MediaRendererPlugin : Rygel.Plugin {
             }
 
             var mime_types = player.get_mime_types ();
+
+            mime_types += "audio/mpegurl";
+            mime_types += "audio/x-mpegurl";
+            mime_types += "video/mpegurl";
+            mime_types += "video/x-mpegurl";
 
             foreach (var protocol in protocols) {
                 if (protocols[0] != protocol ||
