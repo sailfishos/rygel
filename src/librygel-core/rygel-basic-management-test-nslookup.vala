@@ -114,12 +114,12 @@ internal class Rygel.BasicManagementTestNSLookup : BasicManagementTest {
     private static const uint DEFAULT_INTERVAL_TIMEOUT = 1000;
 
     private struct Result {
-        private ProcessState state;
-        private string name_server_address;
-        private string returned_host_name;
-        private string[] addresses;
-        private ResultStatus status;
-        private AnswerType answer_type;
+        public ProcessState state;
+        public string name_server_address;
+        public string returned_host_name;
+        public string[] addresses;
+        public ResultStatus status;
+        public AnswerType answer_type;
         uint execution_time;
 
         private string get_addresses_csv () {
@@ -167,16 +167,18 @@ internal class Rygel.BasicManagementTestNSLookup : BasicManagementTest {
         default = DEFAULT_INTERVAL_TIMEOUT;
     }
 
+    private uint _repetitions;
     public uint repetitions {
         construct {
-            this.iterations = value;
-            if (this.iterations == 0) {
-                this.iterations = DEFAULT_REPETITIONS;
+            this.iterations = 1;
+            this._repetitions = value;
+            if (this._repetitions == 0) {
+                this._repetitions = DEFAULT_REPETITIONS;
             }
         }
 
         private get {
-            return this.iterations;
+            return this._repetitions;
         }
         default = DEFAULT_REPETITIONS;
     }
@@ -217,6 +219,7 @@ internal class Rygel.BasicManagementTestNSLookup : BasicManagementTest {
 
         this.command = { "nslookup",
                          "-timeout=%u".printf (this.interval_time_out/1000),
+                         "-retry=%u".printf (this.repetitions),
                          host_name };
         if (name_server != null && name_server.length > 0) {
             this.command += name_server;

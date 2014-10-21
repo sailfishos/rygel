@@ -136,7 +136,7 @@ internal class Rygel.ImportResource : GLib.Object, Rygel.StateMachine {
         queue.dequeue (this.item);
 
         try {
-            var source_file = File.new_for_uri (this.item.uris[0]);
+            var source_file = File.new_for_uri (this.item.get_primary_uri ());
             this.output_stream = yield source_file.replace_async (null,
                                                                   false,
                                                                   FileCreateFlags.PRIVATE,
@@ -154,7 +154,7 @@ internal class Rygel.ImportResource : GLib.Object, Rygel.StateMachine {
 
             debug ("Importing resource from %s to %s",
                    source_uri,
-                   this.item.uris[0]);
+                   this.item.get_primary_uri ());
 
             yield;
         } catch (Error err) {
@@ -187,7 +187,7 @@ internal class Rygel.ImportResource : GLib.Object, Rygel.StateMachine {
         } else if (!(media_object as MediaItem).place_holder) {
             msg = _("Pushing data to non-empty item '%s' not allowed").printf
                                         (media_object.id);
-        } else if (media_object.uris.size < 1) {
+        } else if (media_object.get_uris ().is_empty) {
             assert_not_reached ();
         }
 
@@ -204,20 +204,10 @@ internal class Rygel.ImportResource : GLib.Object, Rygel.StateMachine {
         if (message.status_code >= 200 && message.status_code <= 299) {
             this.action.return ();
         } else {
-            this.status = TransferStatus.ERROR;
-            try {
-                this.output_stream.close (this.cancellable);
-                var file = File.new_for_uri (this.item.uris[0]);
-                file.delete (this.cancellable);
-            } catch (Error error) {};
-
-            var phrase = Status.get_phrase (message.status_code);
-            if (message.status_code == 404) {
-                this.action.return_error (714, phrase);
-            } else {
-                this.action.return_error (715, phrase);
-            }
+            this.handle_transfer_error (message);
         }
+
+        this.action = null;
     }
 
     private void got_chunk_cb (Message message, Buffer buffer) {
@@ -262,13 +252,35 @@ internal class Rygel.ImportResource : GLib.Object, Rygel.StateMachine {
     private void finished_cb (Message message) {
         if (this.status == TransferStatus.IN_PROGRESS) {
             if (!(message.status_code >= 200 && message.status_code <= 299)) {
-                this.status = TransferStatus.ERROR;
-
-                var phrase = Status.get_phrase (message.status_code);
-                this.action.return_error (714, phrase);
+                this.handle_transfer_error (message);
             }
         }
 
         this.run_callback ();
+    }
+
+    private void handle_transfer_error (Message message) {
+        this.status = TransferStatus.ERROR;
+        try {
+            this.output_stream.close (this.cancellable);
+            var file = File.new_for_uri (this.item.get_primary_uri ());
+            file.delete (this.cancellable);
+        } catch (Error error) {};
+
+        var phrase = Status.get_phrase (message.status_code);
+        warning (_("Failed to import file from %s: %s"),
+                 this.source_uri,
+                 phrase);
+
+        if (action == null) {
+            return;
+        }
+
+        if (message.status_code == Soup.Status.NOT_FOUND ||
+            message.status_code < 100) {
+            this.action.return_error (714, phrase);
+        } else {
+            this.action.return_error (715, phrase);
+        }
     }
 }

@@ -144,8 +144,15 @@ internal class Rygel.MediaExport.Harvester : GLib.Object {
                                   File?            other,
                                   FileMonitorEvent event) {
         try {
+            var info = file.query_info (FileAttribute.STANDARD_TYPE,
+                                        FileQueryInfoFlags.NONE,
+                                        this.cancellable);
             switch (event) {
                 case FileMonitorEvent.CREATED:
+                    if (info.get_file_type () == FileType.DIRECTORY) {
+                        this.on_changes_done (file);
+                    }
+                    break;
                 case FileMonitorEvent.CHANGES_DONE_HINT:
                     this.on_changes_done (file);
                     break;
@@ -203,14 +210,23 @@ internal class Rygel.MediaExport.Harvester : GLib.Object {
             // change
             var id = MediaCache.get_id (file);
             var object = cache.get_object (id);
-            var parent = null as MediaContainer;
 
-            if (object != null) {
-                parent = object.parent;
-                if (parent is TrackableContainer) {
+            if (object != null && object.parent != null) {
+                var parent = object.parent;
+
+                if (parent is WritableDbContainer) {
+                    var container = parent as WritableDbContainer;
+
+                    container.remove_tracked (object);
+                } else if (parent is TrackableDbContainer) {
+                    // This should not be possible, but just to be sure.
                     var container = parent as TrackableContainer;
+
                     container.remove_child_tracked.begin (object);
                 }
+            } else {
+                warning (_("Could not find object %s or its parent. Database is inconsistent"),
+                         id);
             }
         } catch (Error error) {
             warning (_("Error removing object from database: %s"),
@@ -223,9 +239,19 @@ internal class Rygel.MediaExport.Harvester : GLib.Object {
             return;
         }
 
+        var period = FILE_CHANGE_DEFAULT_GRACE_PERIOD;
+        try {
+            var config = MetaConfig.get_default ();
+            period = config.get_int ("MediaExport",
+                                     "monitor-grace-timeout",
+                                     0,
+                                     500);
+        } catch (Error error) { }
+
+
         if (this.extraction_grace_timers.has_key (file)) {
             Source.remove (this.extraction_grace_timers[file]);
-        } else {
+        } else if (period > 0) {
             debug ("Starting grace timer for harvesting %s…",
                     file.get_uri ());
         }
@@ -236,8 +262,12 @@ internal class Rygel.MediaExport.Harvester : GLib.Object {
             return false;
         };
 
-        var timeout = Timeout.add_seconds (FILE_CHANGE_DEFAULT_GRACE_PERIOD,
-                                           (owned) callback);
-        this.extraction_grace_timers[file] = timeout;
+        if (period > 0) {
+            var timeout = Timeout.add_seconds (FILE_CHANGE_DEFAULT_GRACE_PERIOD,
+                                               (owned) callback);
+            this.extraction_grace_timers[file] = timeout;
+        } else {
+            Idle.add ((owned) callback);
+        }
     }
 }
