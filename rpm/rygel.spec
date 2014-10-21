@@ -12,8 +12,8 @@ BuildRequires: gnome-common
 BuildRequires: gobject-introspection-devel >= 1.36
 BuildRequires: dbus-glib-devel
 BuildRequires: desktop-file-utils
-BuildRequires: pkgconfig(gstreamer-1.0)
-BuildRequires: pkgconfig(gstreamer-plugins-base-1.0)
+#BuildRequires: pkgconfig(gstreamer-1.0)
+#BuildRequires: pkgconfig(gstreamer-plugins-base-1.0)
 BuildRequires: gupnp-devel
 BuildRequires: gupnp-av-devel
 BuildRequires: gupnp-dlna-devel
@@ -56,7 +56,7 @@ A plugin for rygel to use tracker to locate media on the local machine.
 %setup -q -n %{name}-%{version}/%{name}
 
 %build
-%autogen release --enable-tracker-plugin --disable-silent-rules
+%autogen release --enable-tracker-plugin --disable-silent-rules --with-media-engine=simple
 
 make %{?_smp_mflags} V=1
 
