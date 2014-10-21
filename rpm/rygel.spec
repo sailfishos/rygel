@@ -23,6 +23,7 @@ BuildRequires: libsoup-devel
 BuildRequires: libuuid-devel
 BuildRequires: sqlite-devel
 BuildRequires: tracker-devel
+BuildRequires: pkgconfig(libmediaart-1.0)
 BuildRequires: intltool
 
 %description
