@@ -56,7 +56,7 @@ A plugin for rygel to use tracker to locate media on the local machine.
 %setup -q -n %{name}-%{version}/%{name}
 
 %build
-%autogen release --enable-tracker-plugin --disable-silent-rules --with-media-engine=simple
+%autogen release --enable-tracker-plugin --disable-silent-rules --with-media-engine=simple --disable-strict-valac
 
 make %{?_smp_mflags} V=1
 
