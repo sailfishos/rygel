@@ -82,24 +82,24 @@ rm -rf %{buildroot}/%{_datadir}/icons/hicolor/*/apps/rygel*
 %config %{_sysconfdir}/rygel.conf
 %{_bindir}/rygel
 %{_libdir}/librygel*.so.*
-%{_libdir}/rygel-2.2/engines/*
-%{_libdir}/rygel-2.2/plugins/external.plugin
-%{_libdir}/rygel-2.2/plugins/librygel-external.so
-%{_libdir}/rygel-2.2/plugins/librygel-mpris.so
-%{_libdir}/rygel-2.2/plugins/mpris.plugin
-%{_libdir}/rygel-2.2/plugins/librygel-media-export.so
-%{_libdir}/rygel-2.2/plugins/librygel-playbin.so
-%{_libdir}/rygel-2.2/plugins/media-export.plugin
-%{_libdir}/rygel-2.2/plugins/playbin.plugin
+%{_libdir}/rygel-2.4/engines/*
+%{_libdir}/rygel-2.4/plugins/external.plugin
+%{_libdir}/rygel-2.4/plugins/librygel-external.so
+%{_libdir}/rygel-2.4/plugins/librygel-mpris.so
+%{_libdir}/rygel-2.4/plugins/mpris.plugin
+%{_libdir}/rygel-2.4/plugins/librygel-media-export.so
+%{_libdir}/rygel-2.4/plugins/librygel-playbin.so
+%{_libdir}/rygel-2.4/plugins/media-export.plugin
+%{_libdir}/rygel-2.4/plugins/playbin.plugin
 %{_datadir}/rygel/
 %{_datadir}/dbus-1/services/org.gnome.Rygel1.service
 
 %files tracker
-%{_libdir}/rygel-2.2/plugins/librygel-tracker.so
-%{_libdir}/rygel-2.2/plugins/tracker.plugin
+%{_libdir}/rygel-2.4/plugins/librygel-tracker.so
+%{_libdir}/rygel-2.4/plugins/tracker.plugin
 
 %files devel
 %{_libdir}/librygel-*.so
-%{_includedir}/rygel-2.2
+%{_includedir}/rygel-2.4
 %{_libdir}/pkgconfig/rygel*.pc
 %{_datadir}/vala/vapi/rygel-*
