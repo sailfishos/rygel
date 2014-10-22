@@ -87,10 +87,13 @@ rm -rf %{buildroot}/%{_datadir}/icons/hicolor/*/apps/rygel*
 %{_libdir}/rygel-2.4/plugins/librygel-external.so
 %{_libdir}/rygel-2.4/plugins/librygel-mpris.so
 %{_libdir}/rygel-2.4/plugins/mpris.plugin
-%{_libdir}/rygel-2.4/plugins/librygel-media-export.so
-%{_libdir}/rygel-2.4/plugins/librygel-playbin.so
-%{_libdir}/rygel-2.4/plugins/media-export.plugin
-%{_libdir}/rygel-2.4/plugins/playbin.plugin
+#%{_libdir}/rygel-2.4/plugins/librygel-media-export.so
+#%{_libdir}/rygel-2.4/plugins/librygel-playbin.so
+#%{_libdir}/rygel-2.4/plugins/media-export.plugin
+#%{_libdir}/rygel-2.4/plugins/playbin.plugin
+%{_libdir}/girepository-1.0/RygelCore-2.4.typelib
+%{_libdir}/girepository-1.0/RygelRenderer-2.4.typelib
+%{_libdir}/girepository-1.0/RygelServer-2.4.typelib
 %{_datadir}/rygel/
 %{_datadir}/dbus-1/services/org.gnome.Rygel1.service
 
@@ -103,3 +106,6 @@ rm -rf %{buildroot}/%{_datadir}/icons/hicolor/*/apps/rygel*
 %{_includedir}/rygel-2.4
 %{_libdir}/pkgconfig/rygel*.pc
 %{_datadir}/vala/vapi/rygel-*
+%{_datadir}/gir-1.0/RygelCore-2.4.gir
+%{_datadir}/gir-1.0/RygelRenderer-2.4.gir
+%{_datadir}/gir-1.0/RygelServer-2.4.gir
