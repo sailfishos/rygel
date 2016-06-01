@@ -60,6 +60,8 @@ public interface Rygel.PlayerController : GLib.Object {
 
     public abstract string current_transport_actions { owned get; }
 
+    public abstract string play_mode { get; set; }
+
     public abstract bool next ();
 
     public abstract bool previous ();
@@ -81,6 +83,8 @@ public interface Rygel.PlayerController : GLib.Object {
     public abstract void set_next_playlist_uri (string uri,
                                        string metadata,
                                        MediaCollection collection);
+
+    public abstract bool is_play_mode_valid (string play_mode);
 
     protected string unescape (string input) {
         var result = input.replace ("&quot;", "\"");

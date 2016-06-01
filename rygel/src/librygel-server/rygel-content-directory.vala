@@ -95,9 +95,8 @@ public class Rygel.ContentDirectory: Service {
         this.root_container = plugin.root_container;
         this.http_server = new HTTPServer (this, plugin.name);
 
-        this.updated_containers = new ArrayList<MediaContainer> ((a, b) => {
-                return a.id == b.id;
-            });
+        this.updated_containers = new ArrayList<MediaContainer>
+                                        (MediaContainer.equal_func);
         this.active_imports = new ArrayList<ImportResource> ();
         this.finished_imports = new ArrayList<ImportResource> ();
 
@@ -649,8 +648,7 @@ public class Rygel.ContentDirectory: Service {
         value.set_string (this.last_change.get_log ());
     }
 
-    private void ensure_timeout ()
-    {
+    private void ensure_timeout () {
         if (this.update_notify_id == 0) {
             this.update_notify_id = Timeout.add (200, this.update_notify);
         }
@@ -658,8 +656,7 @@ public class Rygel.ContentDirectory: Service {
 
     private void add_last_change_entry (MediaObject object,
                                         ObjectEventType event_type,
-                                        bool sub_tree_update)
-    {
+                                        bool sub_tree_update) {
         LastChangeEntry entry;
 
         switch (event_type) {

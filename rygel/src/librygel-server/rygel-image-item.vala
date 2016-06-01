@@ -2,9 +2,12 @@
  * Copyright (C) 2008 Zeeshan Ali <zeenix@gmail.com>.
  * Copyright (C) 2010 Nokia Corporation.
  * Copyright (C) 2012 Intel Corporation.
+ * Copyright (C) 2013 Cable Television Laboratories, Inc.
  *
  * Author: Zeeshan Ali (Khattak) <zeeshanak@gnome.org>
  *                               <zeeshan.ali@nokia.com>
+ *         Doug Galligan <doug@sentosatech.com>
+ *         Craig Pratt <craig@ecaspia.com>
  *
  * This file is part of Rygel.
  *
@@ -29,7 +32,7 @@ using Gee;
 /**
  * Represents an image item.
  */
-public class Rygel.ImageItem : MediaItem, VisualItem {
+public class Rygel.ImageItem : MediaFileItem, VisualItem {
     public new const string UPNP_CLASS = "object.item.imageItem";
 
     //TODO: This property documentation is not used.
@@ -37,19 +40,22 @@ public class Rygel.ImageItem : MediaItem, VisualItem {
 
     /**
      * The width of the image in pixels.
-     * A value of -1 means that the width is unknown and will not, or did not, appear in DIDL-Lite XML.
+     * A value of -1 means that the width is unknown and will not, or did not,
+     * appear in DIDL-Lite XML.
      */
     public int width { get; set; default = -1; }
 
     /**
      * The height of the image in pixels.
-     * A value of -1 means that the height is unknown and will not, or did not, appear in DIDL-Lite XML.
+     * A value of -1 means that the height is unknown and will not, or did not,
+     * appear in DIDL-Lite XML.
      */
     public int height { get; set; default = -1; }
 
     /**
      *The number of bits per pixel used to represent the image resource.
-     * A value of -1 means that the color depth is unknown and will not, or did not, appear in DIDL-Lite XML.
+     * A value of -1 means that the color depth is unknown and will not, or did
+     * not, appear in DIDL-Lite XML.
      */
     public int color_depth { get; set; default = -1; }
 
@@ -74,46 +80,20 @@ public class Rygel.ImageItem : MediaItem, VisualItem {
         this.thumbnails = new ArrayList<Thumbnail> ();
     }
 
-    public override bool streamable () {
-        return false;
-    }
-
     public override void add_uri (string uri) {
         base.add_uri (uri);
 
-        this.add_thumbnail_for_uri (uri, this.mime_type);
+        this.add_thumbnail_for_uri (uri);
     }
 
-    internal override void add_resources (DIDLLiteItem didl_item,
-                                          bool         allow_internal)
-                                          throws Error {
-        base.add_resources (didl_item, allow_internal);
+    internal override MediaResource get_primary_resource () {
+        var res = base.get_primary_resource ();
 
-        this.add_thumbnail_resources (didl_item, allow_internal);
-    }
+        this.set_visual_resource_properties (res);
 
-    internal override DIDLLiteResource add_resource
-                                        (DIDLLiteObject didl_object,
-                                         string?      uri,
-                                         string       protocol,
-                                         string?      import_uri = null)
-                                         throws Error {
-        var res = base.add_resource (didl_object, uri, protocol, import_uri);
-
-        this.add_visual_props (res);
+        res.dlna_flags |= DLNAFlags.INTERACTIVE_TRANSFER_MODE;
 
         return res;
-    }
-
-    internal override void add_proxy_resources (HTTPServer   server,
-                                                DIDLLiteItem didl_item)
-                                                throws Error {
-        base.add_proxy_resources (server, didl_item);
-
-        if (!this.place_holder) {
-            // Thumbnails comes in the end
-            this.add_thumbnail_proxy_resources (server, didl_item);
-        }
     }
 
     protected override ProtocolInfo get_protocol_info (string? uri,
@@ -124,4 +104,11 @@ public class Rygel.ImageItem : MediaItem, VisualItem {
 
         return protocol_info;
     }
+
+    internal override void add_additional_resources (HTTPServer server) {
+        base.add_additional_resources (server);
+
+        this.add_thumbnail_resources (server);
+    }
+
 }
