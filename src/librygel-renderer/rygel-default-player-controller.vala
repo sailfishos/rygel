@@ -175,6 +175,20 @@ internal class Rygel.DefaultPlayerController : Rygel.PlayerController, Object {
         }
     }
 
+    [CCode (notify = false)]
+    public string play_mode {
+        get {
+            return this._play_mode;
+        }
+
+        set {
+            if (value != this._play_mode) {
+                this._play_mode = value;
+                this.notify_property ("play-mode");
+            }
+        }
+    }
+
     // Private members
     private List<DIDLLiteItem> playlist;
     private uint timeout_id;
@@ -189,6 +203,7 @@ internal class Rygel.DefaultPlayerController : Rygel.PlayerController, Object {
     private uint _n_tracks;
     private uint _track;
     private string _playback_state = "NO_MEDIA_PRESENT";
+    private string _play_mode = "NORMAL";
 
     public DefaultPlayerController (MediaPlayer player, string protocol_info) {
         Object (player : player, protocol_info : protocol_info);
@@ -341,6 +356,10 @@ internal class Rygel.DefaultPlayerController : Rygel.PlayerController, Object {
             this._playback_state = state;
             this.notify_property ("playback-state");
         }
+    }
+
+    public bool is_play_mode_valid (string play_mode) {
+        return play_mode == "NORMAL";
     }
 
     private void notify_uri_cb (Object player, ParamSpec p) {

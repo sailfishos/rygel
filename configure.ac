@@ -48,7 +48,7 @@ GEE_REQUIRED=0.8.0
 UUID_REQUIRED=1.41.3
 LIBSOUP_REQUIRED=2.44.0
 GTK_REQUIRED=3.0
-MEDIAART_REQUIRED=0.5.0
+MEDIAART_REQUIRED=0.7.0
 
 dnl Additional requirements for media-export plugin
 GSTREAMER_TAG_REQUIRED=1.0
@@ -73,10 +73,10 @@ RYGEL_COMMON_MODULES="$RYGEL_BASE_MODULES gupnp-av-1.0 >= $GUPNP_AV_REQUIRED"
 PKG_CHECK_MODULES([LIBRYGEL_SERVER_DEPS], [$RYGEL_COMMON_MODULES uuid >=
                    $UUID_REQUIRED gssdp-1.0 >= $GSSDP_REQUIRED gio-2.0 >=
                    $GIO_REQUIRED gmodule-2.0 libxml-2.0 >= $LIBXML_REQUIRED
-                   libsoup-2.4 >= $LIBSOUP_REQUIRED libmediaart-1.0 >=
+                   libsoup-2.4 >= $LIBSOUP_REQUIRED libmediaart-2.0 >=
                    $MEDIAART_REQUIRED])
 RYGEL_COMMON_MODULES_VALAFLAGS="$RYGEL_BASE_MODULES_VALAFLAGS --pkg gupnp-av-1.0"
-LIBRYGEL_SERVER_DEPS_VALAFLAGS="$RYGEL_COMMON_MODULES_VALAFLAGS --pkg gssdp-1.0 --pkg gio-2.0 --pkg libsoup-2.4 --pkg gmodule-2.0 --pkg libmediaart-1.0"
+LIBRYGEL_SERVER_DEPS_VALAFLAGS="$RYGEL_COMMON_MODULES_VALAFLAGS --pkg gssdp-1.0 --pkg gio-2.0 --pkg libsoup-2.4 --pkg gmodule-2.0 --pkg libmediaart-2.0"
 AC_SUBST([LIBRYGEL_SERVER_DEPS_VALAFLAGS])
 
 PKG_CHECK_MODULES([LIBRYGEL_RENDERER_DEPS], [$RYGEL_COMMON_MODULES gio-2.0 >= $GIO_REQUIRED libsoup-2.4 >= $LIBSOUP_REQUIRED])
@@ -152,6 +152,16 @@ AS_IF([test "x$enable_mediathek_plugin" = "xyes"],
                        libxml-2.0 >= $LIBXML_REQUIRED])
   ])
 
+RYGEL_ADD_PLUGIN([ruih],[Ruih],[yes])
+AS_IF([test "x$enable_ruih_plugin" = "xyes"],
+  [
+    PKG_CHECK_MODULES([RYGEL_PLUGIN_RUIH_DEPS],
+                      [$RYGEL_COMMON_MODULES
+                       gio-2.0 >= $GIO_REQUIRED
+                       libsoup-2.4 >= $LIBSOUP_REQUIRED
+                       libxml-2.0 >= $LIBXML_REQUIRED])
+  ])
+
 AS_IF([test "x$with_media_engine" = "xgstreamer"],
       [
         RYGEL_ADD_PLUGIN([playbin],[GStreamer playbin],[yes])
@@ -172,9 +182,9 @@ AS_IF([test "x$with_media_engine" = "xgstreamer"],
                                gstreamer-pbutils-1.0 >= $GSTPBU_REQUIRED
                                libsoup-2.4 >= $LIBSOUP_REQUIRED
                                sqlite3 >= $LIBSQLITE3_REQUIRED
-                               libmediaart-1.0 >= $MEDIAART_REQUIRED
+                               libmediaart-2.0 >= $MEDIAART_REQUIRED
                                uuid])
-            RYGEL_PLUGIN_MEDIA_EXPORT_DEPS_VALAFLAGS="$RYGEL_COMMON_MODULES_VALAFLAGS --pkg gupnp-dlna-2.0 --pkg gupnp-dlna-gst-2.0 --pkg gstreamer-tag-1.0 --pkg gstreamer-app-1.0 --pkg gstreamer-pbutils-1.0 --pkg sqlite3"
+            RYGEL_PLUGIN_MEDIA_EXPORT_DEPS_VALAFLAGS="$RYGEL_COMMON_MODULES_VALAFLAGS --pkg gupnp-dlna-2.0 --pkg gupnp-dlna-gst-2.0 --pkg gstreamer-tag-1.0 --pkg gstreamer-app-1.0 --pkg gstreamer-pbutils-1.0 --pkg sqlite3 --pkg libmediaart-2.0"
             AC_SUBST([RYGEL_PLUGIN_MEDIA_EXPORT_DEPS_VALAFLAGS])
           ])
 
@@ -187,7 +197,7 @@ AS_IF([test "x$with_media_engine" = "xgstreamer"],
           ])
 
         RYGEL_ADD_STAMP([src/media-engines/gstreamer/librygel_media_engine_gst_la_vala.stamp])
-        RYGEL_ADD_STAMP([src/librygel-renderer-gst/librygel_renderer_gst_2_4_la_vala.stamp])
+        RYGEL_ADD_STAMP([src/librygel-renderer-gst/librygel_renderer_gst_2_6_la_vala.stamp])
       ],
       [
         RYGEL_DISABLE_PLUGIN([playbin])
@@ -202,9 +212,10 @@ AC_ARG_ENABLE([example-plugins],
 AM_CONDITIONAL([BUILD_EXAMPLE_PLUGINS], [test "x$[]enable_example_plugins" = "xyes"])
 
 dnl Explicitly add stamp files for targets that are not plugins
-RYGEL_ADD_STAMP([src/librygel-core/librygel_core_2_4_la_vala.stamp])
-RYGEL_ADD_STAMP([src/librygel-server/librygel_server_2_4_la_vala.stamp])
-RYGEL_ADD_STAMP([src/librygel-renderer/librygel_renderer_2_4_la_vala.stamp])
+RYGEL_ADD_STAMP([src/librygel-core/librygel_core_2_6_la_vala.stamp])
+RYGEL_ADD_STAMP([src/librygel-server/librygel_server_2_6_la_vala.stamp])
+RYGEL_ADD_STAMP([src/librygel-renderer/librygel_renderer_2_6_la_vala.stamp])
+RYGEL_ADD_STAMP([src/librygel-ruih/librygel_ruih_2_0_la_vala.stamp])
 RYGEL_ADD_STAMP([src/rygel/rygel_vala.stamp])
 RYGEL_ADD_STAMP([src/ui/rygel_preferences_vala.stamp])
 RYGEL_ADD_STAMP([src/media-engines/simple/librygel_media_engine_simple_la_vala.stamp])
@@ -412,9 +423,9 @@ AM_CONDITIONAL(ENABLE_VALADOC, test x$found_valadoc = xyes)
 AC_SUBST([RYGEL_PLUGIN_LINKER_FLAGS],
          ["-module -avoid-version"])
 AC_SUBST([RYGEL_PLUGIN_DIR],
-         [${libdir}/rygel-2.4/plugins])
+         [${libdir}/rygel-2.6/plugins])
 AC_SUBST([RYGEL_MEDIA_ENGINE_DIR],
-         [${libdir}/rygel-2.4/engines])
+         [${libdir}/rygel-2.6/engines])
 
 AC_CONFIG_FILES([
 Makefile
@@ -423,6 +434,7 @@ src/librygel-core/Makefile
 src/librygel-renderer/Makefile
 src/librygel-renderer-gst/Makefile
 src/librygel-server/Makefile
+src/librygel-ruih/Makefile
 src/rygel/Makefile
 src/ui/Makefile
 src/media-engines/Makefile
@@ -434,6 +446,7 @@ src/plugins/Makefile
 data/Makefile
 data/xml/Makefile
 data/xml/MediaServer3.xml.in
+data/xml/RuihServer2.xml.in
 data/xml/MediaRenderer2.xml.in
 data/icons/Makefile
 data/icons/32x32/Makefile
@@ -450,11 +463,11 @@ doc/reference/librygel-renderer/Makefile
 doc/reference/librygel-server/Makefile
 doc/reference/librygel-renderer-gst/Makefile
 po/Makefile.in
-rygel-core-2.4.pc
-rygel-renderer-2.4.pc
-rygel-server-2.4.pc
-rygel-renderer-gst-2.4.pc
-tests/Makefile
+rygel-core-2.6.pc
+rygel-renderer-2.6.pc
+rygel-server-2.6.pc
+rygel-renderer-gst-2.6.pc
+rygel-ruih-1.0.pc
 examples/Makefile
 examples/renderer-plugins/Makefile
 examples/renderer-plugins/vala/Makefile

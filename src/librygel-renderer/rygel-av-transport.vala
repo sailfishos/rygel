@@ -65,6 +65,12 @@ internal class Rygel.AVTransport : Service {
         }
     }
 
+    public string possible_playback_media {
+        get {
+            return "NONE,NETWORK";
+        }
+    }
+
     public string speed {
         owned get {
             return this.player.playback_speed;
@@ -74,19 +80,6 @@ internal class Rygel.AVTransport : Service {
             this.player.playback_speed = value;
 
             this.changelog.log ("TransportPlaySpeed", this.player.playback_speed);
-        }
-    }
-
-    private string _mode = "NORMAL";
-    public string mode {
-        get {
-            return this._mode;
-        }
-
-        set {
-            this._mode = value;
-
-            this.changelog.log ("CurrentPlayMode", this._mode);
         }
     }
 
@@ -126,6 +119,7 @@ internal class Rygel.AVTransport : Service {
         action_invoked["Previous"].connect (this.previous_cb);
         action_invoked["X_DLNA_GetBytePositionInfo"].connect
                                         (this.x_dlna_get_byte_position_info_cb);
+        action_invoked["SetPlayMode"].connect (this.set_play_mode_cb);
 
         this.controller.notify["playback-state"].connect (this.notify_state_cb);
         this.controller.notify["n-tracks"].connect (this.notify_n_tracks_cb);
@@ -136,6 +130,7 @@ internal class Rygel.AVTransport : Service {
         this.controller.notify["track-metadata"].connect (this.notify_track_meta_data_cb);
         this.controller.notify["next-uri"].connect (this.notify_next_uri_cb);
         this.controller.notify["next-metadata"].connect (this.notify_next_meta_data_cb);
+        this.controller.notify["play-mode"].connect (this.notify_play_mode_cb);
 
         this.player.notify["duration"].connect (this.notify_duration_cb);
 
@@ -162,9 +157,9 @@ internal class Rygel.AVTransport : Service {
         log.log ("TransportStatus",              this.status);
         log.log ("PlaybackStorageMedium",        this.playback_medium);
         log.log ("RecordStorageMedium",          "NOT_IMPLEMENTED");
-        log.log ("PossiblePlaybackStorageMedia", "None,Network");
+        log.log ("PossiblePlaybackStorageMedia", this.possible_playback_media);
         log.log ("PossibleRecordStorageMedia",   "NOT_IMPLEMENTED");
-        log.log ("CurrentPlayMode",              this.mode);
+        log.log ("CurrentPlayMode",              this.controller.play_mode);
         log.log ("TransportPlaySpeed",           this.player.playback_speed);
         log.log ("RecordMediumWriteStatus",      "NOT_IMPLEMENTED");
         log.log ("CurrentRecordQualityMode",     "NOT_IMPLEMENTED");
@@ -174,14 +169,11 @@ internal class Rygel.AVTransport : Service {
         log.log ("CurrentTrackDuration",         this.player.duration_as_str);
         log.log ("CurrentMediaDuration",         this.player.duration_as_str);
         log.log ("AVTransportURI",               this.controller.uri);
-        log.log ("AVTransportURIMetaData",
-                 Markup.escape_text (this.controller.metadata));
+        log.log ("AVTransportURIMetaData",       this.controller.metadata);
         log.log ("CurrentTrackURI",              this.controller.track_uri);
-        log.log ("CurrentTrackMetaData",
-                 Markup.escape_text (this.controller.track_metadata));
+        log.log ("CurrentTrackMetaData",         this.controller.track_metadata);
         log.log ("NextAVTransportURI",           this.controller.next_uri);
-        log.log ("NextAVTransportURIMetaData",
-                 Markup.escape_text (this.controller.next_metadata));
+        log.log ("NextAVTransportURIMetaData",   this.controller.next_metadata);
 
         value.init (typeof (string));
         value.set_string (log.finish ());
@@ -425,7 +417,7 @@ internal class Rygel.AVTransport : Service {
 
         action.set ("PlayMedia",
                         typeof (string),
-                        "None,Network",
+                        this.possible_playback_media,
                     "RecMedia",
                         typeof (string),
                         "NOT_IMPLEMENTED",
@@ -444,7 +436,7 @@ internal class Rygel.AVTransport : Service {
 
         action.set ("PlayMode",
                         typeof (string),
-                        this.mode,
+                        this.controller.play_mode,
                     "RecQualityMode",
                         typeof (string),
                         "NOT_IMPLEMENTED");
@@ -472,6 +464,13 @@ internal class Rygel.AVTransport : Service {
         action.get ("Speed", typeof (string), out speed);
         if (!(speed in this.player.allowed_playback_speeds)) {
             action.return_error (717, _("Play speed not supported"));
+
+            return;
+        }
+
+        if (this.controller.playback_state != "STOPPED"
+            && this.controller.playback_state != "PAUSED_PLAYBACK") {
+            action.return_error (701, _("Transition not available"));
 
             return;
         }
@@ -636,6 +635,28 @@ internal class Rygel.AVTransport : Service {
         action.return ();
     }
 
+    private void set_play_mode_cb (Service       service,
+                                   ServiceAction action) {
+        if (!this.check_instance_id (action)) {
+            return;
+        }
+
+        string play_mode;
+
+        action.get ("NewPlayMode",
+                        typeof (string),
+                        out play_mode);
+
+        if (!this.controller.is_play_mode_valid(play_mode)) {
+            action.return_error (712, _("Play mode not supported"));
+            return;
+        }
+
+        this.controller.play_mode = play_mode;
+
+        action.return ();
+    }
+
     private void notify_state_cb (Object controller, ParamSpec p) {
         var state = this.controller.playback_state;
         this.changelog.log ("TransportState", state);
@@ -685,6 +706,10 @@ internal class Rygel.AVTransport : Service {
     private void notify_next_meta_data_cb (Object player, ParamSpec p) {
         this.changelog.log ("NextAVTransportURIMetaData",
                             Markup.escape_text (this.controller.next_metadata));
+    }
+
+    private void notify_play_mode_cb (Object player, ParamSpec p) {
+	this.changelog.log ("CurrentPlayMode", this.controller.play_mode);
     }
 
     private async void handle_playlist (ServiceAction action,
@@ -781,6 +806,25 @@ internal class Rygel.AVTransport : Service {
 
     bool head_faked;
 
+    // HACK ALERT: This work around vala's feature of capturing 'this' pointer
+    // for all lambdas introduced in a class instance, even if 'this' is never
+    // used. Captured 'this' extends lifetime of an AVTransport instance beyond
+    // time expected by GUPnP. Due to GUPnP not using weak pointers at some
+    // places (e.g. xmlNode property of GUPnPServiceInfo), a crash happens when
+    // AVTransport is freed.
+    private static void setup_check_resource_callback (AVTransport instance, Soup.Message message) {
+        var weakme = WeakRef (instance);
+        var weakmsg = WeakRef (message);
+        message.got_headers.connect( () => {
+                Rygel.AVTransport? me = (Rygel.AVTransport?)weakme.get();
+                Soup.Message? msg = (Soup.Message?)weakmsg.get();
+                if (me == null || msg == null)
+                    return;
+                me.head_faked = true;
+                me.session.cancel_message (msg, msg.status_code);
+            });
+    }
+
     private void check_resource (Soup.Message msg,
                                  string       _uri,
                                  string       _metadata,
@@ -798,10 +842,7 @@ internal class Rygel.AVTransport : Service {
 
             // Fake HEAD request by cancelling the message after the headers
             // were received, then restart the message
-            msg.got_headers.connect ((msg) => {
-                this.head_faked = true;
-                this.session.cancel_message (msg, msg.status_code);
-            });
+            setup_check_resource_callback (this, msg);
 
             this.session.queue_message (msg, null);
 
@@ -844,6 +885,27 @@ internal class Rygel.AVTransport : Service {
         }
     }
 
+    // HACK ALERT: This work around vala's feature of capturing 'this' pointer
+    // for all lambdas introduced in a class instance, even if 'this' is never
+    // used. Captured 'this' extends lifetime of an AVTransport instance beyond
+    // time expected by GUPnP. Due to GUPnP not using weak pointers at some
+    // places (e.g. xmlNode property of GUPnPServiceInfo), a crash happens when
+    // AVTransport is freed.
+    private static void setup_handle_new_transport_uri_callback(AVTransport instance,
+    Message message, string uri, string metadata, GUPnP.ServiceAction action) {
+        var weakme = WeakRef(instance);
+        var weakmsg = WeakRef(message);
+        //var weakact = WeakRef(action);
+        message.finished.connect( () => {
+            Rygel.AVTransport? me = (Rygel.AVTransport?)weakme.get();
+            Soup.Message? msg = (Soup.Message?)weakmsg.get();
+            //GUPnP.ServiceAction? act = (GUPnP.ServiceAction?)weakact.get();
+            if (me == null || msg == null)
+                return;
+            me.check_resource (msg, uri, metadata, action);
+        });
+    }
+
     private void handle_new_transport_uri (ServiceAction action,
                                            string        uri,
                                            string        metadata) {
@@ -851,10 +913,10 @@ internal class Rygel.AVTransport : Service {
             var message = new Message ("HEAD", uri);
             message.request_headers.append ("getContentFeatures.dlna.org",
                                             "1");
+            message.request_headers.append ("Connection", "close");
             this.head_faked = false;
-            message.finished.connect ((msg) => {
-                this.check_resource (msg, uri, metadata, action);
-            });
+            setup_handle_new_transport_uri_callback(this, message, uri,
+            metadata, action);
 
             this.session.queue_message (message, null);
         } else {

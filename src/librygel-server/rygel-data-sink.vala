@@ -1,7 +1,9 @@
 /*
  * Copyright (C) 2012 Intel Corporation.
+ * Copyright (C) 2013 Cable Television Laboratories, Inc.
  *
  * Author: Jens Georg <jensg@openismus.com>
+ *         Craig Pratt <craig@ecaspia.com>
  *
  * This file is part of Rygel.
  *
@@ -40,19 +42,16 @@ internal class Rygel.DataSink : Object {
     public DataSink (DataSource source,
                      Server     server,
                      Message    message,
-                     HTTPSeek?  offsets) {
+                     HTTPSeekRequest?  offsets) {
         this.source = source;
         this.server = server;
         this.message = message;
 
         this.chunks_buffered = 0;
         this.bytes_sent = 0;
-        this.max_bytes = int64.MAX;
-        if (offsets != null &&
-            offsets is HTTPByteSeek) {
-            this.max_bytes = offsets.length;
-        }
-
+        this.max_bytes = this.get_max_bytes (offsets);
+        debug ("Setting max_bytes to %s", (this.max_bytes == int64.MAX)
+                                          ? "MAX" : this.max_bytes.to_string());
         this.source.data_available.connect (this.on_data_available);
         this.message.wrote_chunk.connect (this.on_wrote_chunk);
     }
@@ -83,5 +82,18 @@ internal class Rygel.DataSink : Object {
         if (this.chunks_buffered > MAX_BUFFERED_CHUNKS) {
             this.source.freeze ();
         }
+    }
+
+    private int64 get_max_bytes (HTTPSeekRequest? offsets) {
+        if (offsets == null || !(offsets is HTTPByteSeekRequest)) {
+            debug ("Setting max_bytes to MAX");
+
+            return int64.MAX;
+        }
+
+        var request = offsets as HTTPByteSeekRequest;
+        debug ("Setting max_bytes to %lld", request.range_length);
+
+        return request.range_length;
     }
 }
