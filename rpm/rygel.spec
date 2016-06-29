@@ -25,6 +25,7 @@ BuildRequires: sqlite-devel
 BuildRequires: tracker-devel
 BuildRequires: pkgconfig(libmediaart-2.0)
 BuildRequires: intltool
+Obsoletes: rygel-gst-plugins
 
 %description
 Rygel is a home media solution that allows you to easily share audio, video and
