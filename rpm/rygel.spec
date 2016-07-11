@@ -1,5 +1,5 @@
 Name:          rygel
-Version:       0.21.5
+Version:       0.25.3
 Release:       1%{?dist}
 Summary:       A collection of UPnP/DLNA services
 
@@ -23,8 +23,9 @@ BuildRequires: libsoup-devel
 BuildRequires: libuuid-devel
 BuildRequires: sqlite-devel
 BuildRequires: tracker-devel
-BuildRequires: pkgconfig(libmediaart-1.0)
+BuildRequires: pkgconfig(libmediaart-2.0)
 BuildRequires: intltool
+Obsoletes: rygel-gst-plugins
 
 %description
 Rygel is a home media solution that allows you to easily share audio, video and
@@ -84,30 +85,32 @@ rm -rf %{buildroot}/%{_datadir}/icons/hicolor/*/apps/rygel*
 %config %{_sysconfdir}/rygel.conf
 %{_bindir}/rygel
 %{_libdir}/librygel*.so.*
-%{_libdir}/rygel-2.4/engines/*
-%{_libdir}/rygel-2.4/plugins/external.plugin
-%{_libdir}/rygel-2.4/plugins/librygel-external.so
-%{_libdir}/rygel-2.4/plugins/librygel-mpris.so
-%{_libdir}/rygel-2.4/plugins/mpris.plugin
-#%{_libdir}/rygel-2.4/plugins/librygel-media-export.so
-#%{_libdir}/rygel-2.4/plugins/librygel-playbin.so
-#%{_libdir}/rygel-2.4/plugins/media-export.plugin
-#%{_libdir}/rygel-2.4/plugins/playbin.plugin
-%{_libdir}/girepository-1.0/RygelCore-2.4.typelib
-%{_libdir}/girepository-1.0/RygelRenderer-2.4.typelib
-%{_libdir}/girepository-1.0/RygelServer-2.4.typelib
+%{_libdir}/rygel-2.6/engines/*
+%{_libdir}/rygel-2.6/plugins/external.plugin
+%{_libdir}/rygel-2.6/plugins/librygel-external.so
+%{_libdir}/rygel-2.6/plugins/librygel-mpris.so
+%{_libdir}/rygel-2.6/plugins/mpris.plugin
+%{_libdir}/rygel-2.6/plugins/librygel-ruih.so
+%{_libdir}/rygel-2.6/plugins/ruih.plugin
+#%{_libdir}/rygel-2.6/plugins/librygel-media-export.so
+#%{_libdir}/rygel-2.6/plugins/librygel-playbin.so
+#%{_libdir}/rygel-2.6/plugins/media-export.plugin
+#%{_libdir}/rygel-2.6/plugins/playbin.plugin
+%{_libdir}/girepository-1.0/RygelCore-2.6.typelib
+%{_libdir}/girepository-1.0/RygelRenderer-2.6.typelib
+%{_libdir}/girepository-1.0/RygelServer-2.6.typelib
 %{_datadir}/rygel/
 %{_datadir}/dbus-1/services/org.gnome.Rygel1.service
 
 %files tracker
-%{_libdir}/rygel-2.4/plugins/librygel-tracker.so
-%{_libdir}/rygel-2.4/plugins/tracker.plugin
+%{_libdir}/rygel-2.6/plugins/librygel-tracker.so
+%{_libdir}/rygel-2.6/plugins/tracker.plugin
 
 %files devel
 %{_libdir}/librygel-*.so
-%{_includedir}/rygel-2.4
+%{_includedir}/rygel-2.6
 %{_libdir}/pkgconfig/rygel*.pc
 %{_datadir}/vala/vapi/rygel-*
-%{_datadir}/gir-1.0/RygelCore-2.4.gir
-%{_datadir}/gir-1.0/RygelRenderer-2.4.gir
-%{_datadir}/gir-1.0/RygelServer-2.4.gir
+%{_datadir}/gir-1.0/RygelCore-2.6.gir
+%{_datadir}/gir-1.0/RygelRenderer-2.6.gir
+%{_datadir}/gir-1.0/RygelServer-2.6.gir
