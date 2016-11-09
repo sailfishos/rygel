@@ -4,18 +4,18 @@
  * This file is part of Rygel.
  *
  * Rygel is free software; you can redistribute it and/or modify
- * it under the terms of the GNU Lesser General Public License as published by
- * the Free Software Foundation; either version 2 of the License, or
- * (at your option) any later version.
+ * it under the terms of the GNU Lesser General Public
+ * License as published by the Free Software Foundation; either
+ * version 2.1 of the License, or (at your option) any later version.
  *
  * Rygel is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU Lesser General Public License for more details.
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ * Lesser General Public License for more details.
  *
- * You should have received a copy of the GNU Lesser General Public License
- * along with this program; if not, write to the Free Software Foundation,
- * Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
+ * You should have received a copy of the GNU Lesser General Public
+ * License along with this library; if not, write to the Free Software
+ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
 #include "example-root-container.h"
@@ -44,15 +44,17 @@ rygel_example_root_container_construct (GType object_type, const gchar *title) {
   self = (RygelExampleRootContainer*) rygel_simple_container_construct_root (object_type, title);
 
   item = rygel_music_item_new ("test 1", (RygelMediaContainer*) self, "Test 1", RYGEL_MUSIC_ITEM_UPNP_CLASS);
-  rygel_media_file_item_add_uri (item, "file:///home/murrayc/Music/Madness/05_Baggy_Trousers.mp3");
+  rygel_media_object_add_uri (RYGEL_MEDIA_OBJECT (item), "file:///home/murrayc/Music/Madness/05_Baggy_Trousers.mp3");
   rygel_media_file_item_set_mime_type (item, "audio/mpeg");
   rygel_simple_container_add_child_item ((RygelSimpleContainer*) self, item);
+  rygel_media_file_item_add_engine_resources (item, NULL, NULL);
   g_object_unref (item);
   
   item = rygel_music_item_new ("test 2", (RygelMediaContainer*) self, "Test 1", RYGEL_MUSIC_ITEM_UPNP_CLASS);
-  rygel_media_file_item_add_uri (item, "file:///home/murrayc/Music/08%20Busload%20of%20Faith.mp3");
+  rygel_media_object_add_uri (RYGEL_MEDIA_OBJECT (item), "file:///home/murrayc/Music/08%20Busload%20of%20Faith.mp3");
   rygel_media_file_item_set_mime_type (item, "audio/mpeg");
   rygel_simple_container_add_child_item ((RygelSimpleContainer*) self, item);
+  rygel_media_file_item_add_engine_resources (item, NULL, NULL);
   g_object_unref (item);
 
   return self;

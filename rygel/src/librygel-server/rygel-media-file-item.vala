@@ -12,18 +12,18 @@
  * This file is part of Rygel.
  *
  * Rygel is free software; you can redistribute it and/or modify
- * it under the terms of the GNU Lesser General Public License as published by
- * the Free Software Foundation; either version 2 of the License, or
- * (at your option) any later version.
+ * it under the terms of the GNU Lesser General Public
+ * License as published by the Free Software Foundation; either
+ * version 2.1 of the License, or (at your option) any later version.
  *
  * Rygel is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU Lesser General Public License for more details.
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ * Lesser General Public License for more details.
  *
- * You should have received a copy of the GNU Lesser General Public License
- * along with this program; if not, write to the Free Software Foundation,
- * Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
+ * You should have received a copy of the GNU Lesser General Public
+ * License along with this library; if not, write to the Free Software
+ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
 using GUPnP;
@@ -167,13 +167,14 @@ public abstract class Rygel.MediaFileItem : MediaItem {
         res.mime_type = this.mime_type;
         res.dlna_profile = this.dlna_profile;
         res.dlna_flags = DLNAFlags.BACKGROUND_TRANSFER_MODE;
+        res.dlna_operation = DLNAOperation.RANGE;
 
         // MediaFileItems refer directly to the source URI
         res.uri = this.get_primary_uri ();
         try {
             res.protocol = this.get_protocol_for_uri (res.uri);
         } catch (Error e) {
-            warning (_("Could not determine protocol for uri %s"),
+            warning (_("Could not determine protocol for URI %s"),
                      res.uri);
         }
 
@@ -218,14 +219,17 @@ public abstract class Rygel.MediaFileItem : MediaItem {
                 mime_to_ext.set ("video/" + video, video);
             }
             mime_to_ext.set ("video/x-matroska", "mkv");
+            mime_to_ext.set ("video/x-mkv", "mkv");
 
             // audios
             mime_to_ext.set ("audio/x-wav", "wav");
             mime_to_ext.set ("audio/x-matroska", "mka");
-            mime_to_ext.set ("audio/L16","pcm");
-            mime_to_ext.set ("audio/vnd.dlna.adts","adts");
-            mime_to_ext.set ("audio/mpeg","mp3");
-            mime_to_ext.set ("audio/3gpp","3gp");
+            mime_to_ext.set ("audio/x-mkv", "mka");
+            mime_to_ext.set ("audio/x-mka", "mka");
+            mime_to_ext.set ("audio/L16", "lpcm");
+            mime_to_ext.set ("audio/vnd.dlna.adts", "adts");
+            mime_to_ext.set ("audio/mpeg", "mp3");
+            mime_to_ext.set ("audio/3gpp", "3gp");
 
             // images
             string[] images = {"jpeg", "png"};
@@ -242,13 +246,32 @@ public abstract class Rygel.MediaFileItem : MediaItem {
             mime_to_ext.set ("application/ogg", "ogg");
         }
 
-        if (MediaFileItem.mime_to_ext.has_key (mime_type)) {
-            return mime_to_ext.get (mime_type);
+        // Use first path of mime type to accomodate for audio/L16 variats
+        var short_mime = mime_type.split (";")[0];
+
+        if (MediaFileItem.mime_to_ext.has_key (short_mime)) {
+            return mime_to_ext.get (short_mime);
         }
 
         return "";
     }
 
+    /**
+     * Request the media engine for the resources it can provide for this
+     * item. Typically these are the transcoded resources.
+     */
+    public virtual async void add_engine_resources () {
+        var media_engine = MediaEngine.get_default ( );
+        var added_resources = yield media_engine.get_resources_for_item (this);
+        debug ("Adding %d resources to item source %s:",
+               added_resources.size,
+               this.get_primary_uri ());
+
+        foreach (var resource in added_resources) {
+            debug ("    %s", resource.get_name ());
+        }
+        this.get_resource_list ().add_all (added_resources);
+    }
 
     /**
      * Subclasses can override this method to augment the MediaObject MediaResource

@@ -4,6 +4,7 @@ libdir=@libdir@
 includedir=@includedir@
 
 enginedir=@RYGEL_MEDIA_ENGINE_DIR@
+engine_ldflags=@RYGEL_ENGINE_LINKER_FLAGS@
 
 Name: rygel-server-2.6
 Description: GNOME (Mobile) UPnP/DLNA Media server library
@@ -11,4 +12,4 @@ Version: @VERSION@
 Libs: -L${libdir} -lrygel-server-2.6
 Cflags: -I${includedir}/rygel-2.6
 Requires: gupnp-av-1.0 gee-0.8 rygel-core-2.6
-Requires.Private: uuid gmodule-2.0
+Requires.Private: gmodule-2.0

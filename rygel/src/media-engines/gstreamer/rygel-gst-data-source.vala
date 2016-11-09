@@ -9,18 +9,18 @@
  * This file is part of Rygel.
  *
  * Rygel is free software; you can redistribute it and/or modify
- * it under the terms of the GNU Lesser General Public License as published by
- * the Free Software Foundation; either version 2 of the License, or
- * (at your option) any later version.
+ * it under the terms of the GNU Lesser General Public
+ * License as published by the Free Software Foundation; either
+ * version 2.1 of the License, or (at your option) any later version.
  *
  * Rygel is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU Lesser General Public License for more details.
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ * Lesser General Public License for more details.
  *
- * You should have received a copy of the GNU Lesser General Public License
- * along with this program; if not, write to the Free Software Foundation,
- * Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
+ * You should have received a copy of the GNU Lesser General Public
+ * License along with this library; if not, write to the Free Software
+ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
 using Gst;
@@ -61,10 +61,11 @@ internal class Rygel.GstDataSource : Rygel.DataSource, GLib.Object {
         this.src = element;
     }
 
-    public Gee.List<HTTPResponseElement> ? preroll ( HTTPSeekRequest? seek_request,
-                                                     PlaySpeedRequest? playspeed_request)
-       throws Error {
-        var response_list = new Gee.ArrayList<HTTPResponseElement>();
+    public Gee.List<HTTPResponseElement>? preroll
+                                        (HTTPSeekRequest? seek_request,
+                                         PlaySpeedRequest? playspeed_request)
+                                         throws Error {
+        var response_list = new Gee.ArrayList<HTTPResponseElement> ();
 
         if (playspeed_request != null) {
             throw new DataSourceError.PLAYSPEED_FAILED
@@ -74,27 +75,36 @@ internal class Rygel.GstDataSource : Rygel.DataSource, GLib.Object {
         if (seek_request == null) {
             debug("No seek requested - sending entire binary");
         } else if (seek_request is HTTPByteSeekRequest) {
-            var seek_response = new HTTPByteSeekResponse.from_request( seek_request
-                                                                       as HTTPByteSeekRequest );
-            debug("Processing byte seek request for bytes %lld-%lld",
-                    seek_response.start_byte, seek_response.end_byte);
-            response_list.add(seek_response);
             // Supported - and no reponse values required...
-        } else if (seek is HTTPTimeSeekRequest) {
+            var seek_response = new HTTPByteSeekResponse.from_request
+                                        (seek_request as HTTPByteSeekRequest);
+            debug ("Processing byte seek request for bytes %lld-%lld",
+                   seek_response.start_byte,
+                   seek_response.end_byte);
+            response_list.add (seek_response);
+        } else if (seek_request is HTTPTimeSeekRequest) {
             var time_seek = seek_request as HTTPTimeSeekRequest;
-            // Set the effective TimeSeekRange response range to the requested range
-            // TODO: Align this with actual time range being returned
-            var seek_response = new HTTPTimeSeekResponse.from_request(time_seek, res.duration);
-            debug("Processing time seek request for %lldns-%lldns",
-                    seek_response.start_time, seek_response.end_time);
-            response_list.add(seek_response);
+            // Set the effective TimeSeekRange response range to the requested
+            // range
+            // TODO: Align this with actual time range being returned, might
+            // not be possible as we would need to seek before handling the
+            // response
+            var seek_response = new HTTPTimeSeekResponse.from_request
+                                        (time_seek,
+                                         res.duration * TimeSpan.SECOND);
+            debug ("Processing time seek request for %lldms-%lldms",
+                   seek_response.start_time,
+                   seek_response.end_time);
+            response_list.add (seek_response);
         } else {
             // Unknown/unsupported seek type
             throw new DataSourceError.SEEK_FAILED
-                                    (_("HTTPSeekRequest type unsupported"));
+                                    (_("HTTPSeekRequest type %s unsupported"),
+                                     seek_request.get_type (). name ());
         }
 
         this.seek = seek_request;
+
         return response_list;
     }
 
@@ -221,6 +231,12 @@ internal class Rygel.GstDataSource : Rygel.DataSource, GLib.Object {
                 }
             }
 
+            var filename = "rygel_media_engine_%d_%d".printf (old_state,
+                                                               new_state);
+            Debug.bin_to_dot_file_with_ts (this.pipeline,
+                                           DebugGraphDetails.ALL,
+                                           filename);
+
             if (this.seek != null) {
                 if (old_state == State.READY && new_state == State.PAUSED) {
                     if (this.perform_seek ()) {
@@ -233,6 +249,10 @@ internal class Rygel.GstDataSource : Rygel.DataSource, GLib.Object {
             string err_msg;
 
             if (message.type == MessageType.ERROR) {
+                Debug.bin_to_dot_file_with_ts (this.pipeline,
+                                               DebugGraphDetails.ALL,
+                                               "rygel_media_engine_error");
+
                 message.parse_error (out err, out err_msg);
                 critical (_("Error from pipeline %s: %s"),
                           this.pipeline.name,
@@ -271,21 +291,32 @@ internal class Rygel.GstDataSource : Rygel.DataSource, GLib.Object {
             format = Format.TIME;
             flags |= SeekFlags.KEY_UNIT;
             start = time_seek.start_time * Gst.USECOND;
+            // Work-around for https://bugzilla.gnome.org/show_bug.cgi?id=762787
+            if (this.src.name == "dvdreadsrc" && start == 0) {
+                start += 1 * Gst.SECOND;
+            }
             stop = time_seek.end_time * Gst.USECOND;
-            debug("Performing time-range seek: %lldns to %lldns", start, stop);
+            debug ("Performing time-range seek: %lldns to %lldns", start, stop);
         } else if (this.seek is HTTPByteSeekRequest) {
             var byte_seek = this.seek as HTTPByteSeekRequest;
             if (byte_seek.range_length >= byte_seek.total_size) {
-                // How/why would this happen?
+                // Can happen on (invalid) seeks on resources with unspecified
+                // size
                 return true;
             }
+
             format = Format.BYTES;
             flags |= SeekFlags.ACCURATE;
             start = byte_seek.start_byte;
             stop = byte_seek.end_byte;
-            debug("Performing byte-range seek: bytes %lld to %lld", start, stop);
+            debug ("Performing byte-range seek: bytes %lld to %lld",
+                   start,
+                   stop);
         } else {
-            this.error (new DataSourceError.SEEK_FAILED (_("Unsupported seek type")));
+            var result = new DataSourceError.SEEK_FAILED
+                                        (_("Unsupported seek type"));
+            this.error (result);
+
             return false;
         }
 
@@ -300,8 +331,7 @@ internal class Rygel.GstDataSource : Rygel.DataSource, GLib.Object {
                                  start,
                                  stop_type,
                                  stop + 1)) {
-            warning (_("Failed to seek to offsets %lld:%lld"),
-                     start, stop);
+            warning (_("Failed to seek to offsets %lld:%lld"), start, stop);
 
             this.error (new DataSourceError.SEEK_FAILED (_("Failed to seek")));
 

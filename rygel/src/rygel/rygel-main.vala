@@ -3,25 +3,27 @@
  * Copyright (C) 2008 Zeeshan Ali (Khattak) <zeeshanak@gnome.org>.
  * Copyright (C) 2012 Openismus GmbH.
  * Copyright (C) 2012 Intel Corporation.
+ * Copyright (C) 2014 Jens Georg <mail@jensge.org>
  *
  * Author: Zeeshan Ali (Khattak) <zeeshanak@gnome.org>
  *         Jens Georg <jensg@openismus.com>
+ *         Jens Georg <mail@jensge.org>
  *
  * This file is part of Rygel.
  *
  * Rygel is free software; you can redistribute it and/or modify
- * it under the terms of the GNU Lesser General Public License as published by
- * the Free Software Foundation; either version 2 of the License, or
- * (at your option) any later version.
+ * it under the terms of the GNU Lesser General Public
+ * License as published by the Free Software Foundation; either
+ * version 2.1 of the License, or (at your option) any later version.
  *
  * Rygel is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU Lesser General Public License for more details.
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ * Lesser General Public License for more details.
  *
- * You should have received a copy of the GNU Lesser General Public License
- * along with this program; if not, write to the Free Software Foundation,
- * Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
+ * You should have received a copy of the GNU Lesser General Public
+ * License along with this library; if not, write to the Free Software
+ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
 using Gee;
@@ -38,6 +40,7 @@ internal class Rygel.Main : Object {
 
     private Configuration config;
     private LogHandler log_handler;
+    private Acl acl;
 
     private MainLoop main_loop;
 
@@ -54,6 +57,7 @@ internal class Rygel.Main : Object {
         this.root_devices = new ArrayList <RootDevice> ();
         this.factories = new ArrayList <RootDeviceFactory> ();
         this.main_loop = new GLib.MainLoop (null, false);
+        this.acl = new Acl ();
 
         this.exit_code = 0;
 
@@ -78,12 +82,6 @@ internal class Rygel.Main : Object {
     }
 
     private int run () {
-        try {
-            if (!this.config.get_upnp_enabled ()) {
-                message (_("Rygel is running in streaming-only mode."));
-            }
-        } catch (Error error) { }
-
         message (_("Rygel v%s starting…"), BuildConfig.PACKAGE_VERSION);
 
         this.main_loop.run ();
@@ -112,8 +110,8 @@ internal class Rygel.Main : Object {
 
         Timeout.add_seconds (timeout, () => {
             if (this.plugin_loader.list_plugins ().size == 0) {
-                warning (ngettext ("No plugins found in %d second; giving up...",
-                                   "No plugins found in %d seconds; giving up...",
+                warning (ngettext ("No plugins found in %d second; giving up…",
+                                   "No plugins found in %d seconds; giving up…",
                                    PLUGIN_TIMEOUT),
                          PLUGIN_TIMEOUT);
 
@@ -157,13 +155,16 @@ internal class Rygel.Main : Object {
                context.interface,
                context.host_ip);
 
+        context.acl = this.acl;
+
         try {
             ifaces = this.config.get_interfaces ();
         } catch (GLib.Error err) {}
 
         if (ifaces == null ||
-            context.interface in ifaces||
-            context.network in ifaces) {
+            context.interface in ifaces ||
+            context.network in ifaces ||
+            context.host_ip in ifaces) {
             try {
                 var factory = new RootDeviceFactory (context);
                 this.factories.add (factory);
@@ -180,6 +181,7 @@ internal class Rygel.Main : Object {
             debug ("Ignoring network %s (%s) context.",
                    context.network,
                    context.interface);
+            context.active = false;
         }
     }
 
@@ -219,8 +221,7 @@ internal class Rygel.Main : Object {
         try {
             var device = factory.create (plugin);
 
-            device.available = plugin.active &&
-                               this.config.get_upnp_enabled ();
+            device.available = plugin.active;
 
             // Due to pure evilness of unix sinals this might actually happen
             // if someone shuts down rygel while the call-back is running,

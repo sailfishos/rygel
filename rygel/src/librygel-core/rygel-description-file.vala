@@ -8,18 +8,18 @@
  * This file is part of Rygel.
  *
  * Rygel is free software; you can redistribute it and/or modify
- * it under the terms of the GNU Lesser General Public License as published by
- * the Free Software Foundation; either version 2 of the License, or
- * (at your option) any later version.
+ * it under the terms of the GNU Lesser General Public
+ * License as published by the Free Software Foundation; either
+ * version 2.1 of the License, or (at your option) any later version.
  *
  * Rygel is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU Lesser General Public License for more details.
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ * Lesser General Public License for more details.
  *
- * You should have received a copy of the GNU Lesser General Public License
- * along with this program; if not, write to the Free Software Foundation,
- * Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
+ * You should have received a copy of the GNU Lesser General Public
+ * License along with this library; if not, write to the Free Software
+ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
 using GUPnP;
@@ -200,6 +200,15 @@ public class Rygel.DescriptionFile : Object {
     }
 
     /**
+     * Set the Serial number of the device.
+     *
+     * @param serial is the Unique Device Name of the device.
+     */
+    public void set_serial_number (string serial) {
+        this.set_device_element ("serialNumber", serial);
+    }
+
+    /**
      * Set the DLNA caps of this root device and while taking the
      * capabilities of the plugin into account.
      *
@@ -309,7 +318,10 @@ public class Rygel.DescriptionFile : Object {
         // Check if the X_DLNADOC node has already dev_cap
         // dlnadoc_xpath checks for a X_DLNADOC element that contains a
         // capablity. We can return if that's the case.
-        if (this.apply_xpath (dlnadoc_xpath, null)) {
+        Xml.XPath.Object *tmp;
+        if (this.apply_xpath (dlnadoc_xpath, out tmp)) {
+            delete tmp;
+
             return;
         }
 
@@ -376,8 +388,12 @@ public class Rygel.DescriptionFile : Object {
         var retval = result != null &&
                      result->type == XPath.ObjectType.NODESET &&
                      !result->nodesetval->is_empty ();
-
-        xpo = result;
+        if (!retval && result != null) {
+            xpo = null;
+            delete result;
+        } else {
+            xpo = result;
+        }
 
         return retval;
     }
@@ -470,23 +486,16 @@ public class Rygel.DescriptionFile : Object {
      * @throws GLib.Error if anything fails while creating the XML dump.
      */
     public void save (string path) throws GLib.Error {
-        var file = FileStream.open (path, "w+");
-        var message = _("Failed to write modified description to %s");
-
-        if (unlikely (file == null)) {
-            throw new IOError.FAILED (message, path);
-        }
-
         string mem = null;
         int len = -1;
         doc.doc.dump_memory_enc (out mem, out len, "UTF-8");
 
         if (unlikely (len <= 0)) {
+            var message = _("Failed to write modified description to %s");
             throw new IOError.FAILED (message, path);
         }
 
-        // Make sure we don't have any newlines
-        file.puts (mem.replace ("\n", ""));
+        FileUtils.set_contents (path, mem.replace ("\n", ""));
     }
 
     private int index_of_device_element (string element) {

@@ -6,18 +6,18 @@
  * This file is part of Rygel.
  *
  * Rygel is free software; you can redistribute it and/or modify
- * it under the terms of the GNU Lesser General Public License as published by
- * the Free Software Foundation; either version 2 of the License, or
- * (at your option) any later version.
+ * it under the terms of the GNU Lesser General Public
+ * License as published by the Free Software Foundation; either
+ * version 2.1 of the License, or (at your option) any later version.
  *
  * Rygel is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU Lesser General Public License for more details.
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ * Lesser General Public License for more details.
  *
- * You should have received a copy of the GNU Lesser General Public License
- * along with this program; if not, write to the Free Software Foundation,
- * Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
+ * You should have received a copy of the GNU Lesser General Public
+ * License along with this library; if not, write to the Free Software
+ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
 /**
@@ -33,10 +33,10 @@ internal class Rygel.MediaExport.ObjectFactory : Object {
      * @param title title of the container
      * @param child_count number of children in the container
      */
-    public virtual DBContainer get_container (string     id,
-                                              string     title,
-                                              uint       child_count,
-                                              string?    uri) {
+    public virtual MediaContainer get_container (string     id,
+                                                 string     title,
+                                                 uint       child_count,
+                                                 string?    uri) {
         if (id == "0") {
             return RootContainer.get_instance ();
         } else if (id == RootContainer.FILESYSTEM_FOLDER_ID) {
@@ -65,6 +65,11 @@ internal class Rygel.MediaExport.ObjectFactory : Object {
             return new TrackableDbContainer (id, title);
         }
 
+        if (id.has_prefix ("dvd:")) {
+            var file = File.new_for_uri (uri);
+            return new DVDContainer (id, null, title, file.get_path ());
+        }
+
         if (id.has_prefix ("playlist:")) {
             return new PlaylistContainer (id, title);
         }
@@ -74,7 +79,16 @@ internal class Rygel.MediaExport.ObjectFactory : Object {
         // to allow uploads.
         // See https://bugzilla.gnome.org/show_bug.cgi?id=676379 to
         // give more control over this.
-        return new WritableDbContainer (id, title);
+        var allow_upload = false;
+        try {
+            allow_upload = MetaConfig.get_default ().get_allow_upload ();
+        } catch (Error error) { /* Using default */ }
+
+        if (allow_upload) {
+            return new WritableDbContainer (id, title);
+        } else {
+            return new TrackableDbContainer (id, title);
+        }
     }
 
     /**
@@ -94,6 +108,9 @@ internal class Rygel.MediaExport.ObjectFactory : Object {
             case Rygel.AudioItem.UPNP_CLASS:
                 return new MusicItem (id, parent, title);
             case Rygel.VideoItem.UPNP_CLASS:
+                if (id.has_prefix ("dvd-track")) {
+                    return new DVDTrack (id, parent, title, 0, null);
+                }
                 return new VideoItem (id, parent, title);
             case Rygel.PhotoItem.UPNP_CLASS:
             case Rygel.ImageItem.UPNP_CLASS:

@@ -9,18 +9,18 @@
  * This file is part of Rygel.
  *
  * Rygel is free software; you can redistribute it and/or modify
- * it under the terms of the GNU Lesser General Public License as published by
- * the Free Software Foundation; either version 2 of the License, or
- * (at your option) any later version.
+ * it under the terms of the GNU Lesser General Public
+ * License as published by the Free Software Foundation; either
+ * version 2.1 of the License, or (at your option) any later version.
  *
  * Rygel is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU Lesser General Public License for more details.
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ * Lesser General Public License for more details.
  *
- * You should have received a copy of the GNU Lesser General Public License
- * along with this program; if not, write to the Free Software Foundation,
- * Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
+ * You should have received a copy of the GNU Lesser General Public
+ * License along with this library; if not, write to the Free Software
+ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
 using GUPnP;
@@ -40,8 +40,10 @@ using Gee;
 public class Rygel.PluginLoader : RecursiveModuleLoader {
     private delegate void ModuleInitFunc (PluginLoader loader);
 
-    private HashMap<string,Plugin> plugin_hash;
-    private HashSet<string>        loaded_modules;
+    private HashMap<string,Plugin>            plugin_hash;
+    private HashMap<string,PluginInformation> available_plugins;
+    private HashSet<string>                   loaded_modules;
+    private Configuration                     config;
 
     // Signals
     public signal void plugin_available (Plugin plugin);
@@ -58,6 +60,9 @@ public class Rygel.PluginLoader : RecursiveModuleLoader {
         }
         this.plugin_hash = new HashMap<string,Plugin> ();
         this.loaded_modules = new HashSet<string> ();
+        this.config = MetaConfig.get_default ();
+        this.config.section_changed.connect (this.on_section_changed);
+        this.available_plugins = new HashMap<string, PluginInformation> ();
     }
 
     /**
@@ -70,9 +75,12 @@ public class Rygel.PluginLoader : RecursiveModuleLoader {
     public bool plugin_disabled (string name) {
         var enabled = true;
         try {
-            var config = MetaConfig.get_default ();
-            enabled = config.get_enabled (name);
-        } catch (GLib.Error err) {}
+            enabled = this.config.get_enabled (name);
+        } catch (GLib.Error err) {
+            debug ("Could not find plugin '%s' in configuration: %s",
+                   name,
+                   err.message);
+        }
 
         return !enabled;
     }
@@ -135,6 +143,7 @@ public class Rygel.PluginLoader : RecursiveModuleLoader {
     }
 
     protected override bool load_module_from_info (PluginInformation info) {
+        this.available_plugins.set (info.name, info);
         if (this.plugin_disabled (info.name)) {
             debug ("Module '%s' disabled by user. Ignoring…",
                    info.name);
@@ -147,12 +156,41 @@ public class Rygel.PluginLoader : RecursiveModuleLoader {
         return this.load_module_from_file (module_file);
     }
 
+    private void on_section_changed (string section, SectionEntry entry) {
+        if (entry == SectionEntry.ENABLED) {
+            try {
+                var enabled = this.config.get_enabled (section);
+                if (!enabled) {
+                    if (section in plugin_hash) {
+                        plugin_hash[section].active = enabled;
+                    }
+                } else {
+                    if (section in plugin_hash) {
+                        plugin_hash[section].active = enabled;
+                    } else {
+                        if (section in available_plugins) {
+                            this.load_module_from_info
+                                (available_plugins[section]);
+                        }
+                    }
+                }
+            } catch (Error error) {
+                debug ("Failed to get enabled state for %s: %s",
+                       section,
+                       error.message);
+            }
+        }
+    }
+
     private static string get_config_path () {
         var path = BuildConfig.PLUGIN_DIR;
         try {
-            var config = MetaConfig.get_default ();
-            path = config.get_plugin_path ();
-        } catch (Error error) { }
+            path = MetaConfig.get_default ().get_plugin_path ();
+        } catch (Error error) {
+            debug ("Could not get plugin path from config: %s, using %s",
+                   error.message,
+                   path);
+        }
 
         return path;
     }

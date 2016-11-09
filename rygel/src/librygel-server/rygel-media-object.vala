@@ -10,18 +10,18 @@
  * This file is part of Rygel.
  *
  * Rygel is free software; you can redistribute it and/or modify
- * it under the terms of the GNU Lesser General Public License as published by
- * the Free Software Foundation; either version 2 of the License, or
- * (at your option) any later version.
+ * it under the terms of the GNU Lesser General Public
+ * License as published by the Free Software Foundation; either
+ * version 2.1 of the License, or (at your option) any later version.
  *
  * Rygel is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU Lesser General Public License for more details.
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ * Lesser General Public License for more details.
  *
- * You should have received a copy of the GNU Lesser General Public License
- * along with this program; if not, write to the Free Software Foundation,
- * Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
+ * You should have received a copy of the GNU Lesser General Public
+ * License along with this library; if not, write to the Free Software
+ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
 using GUPnP;
@@ -254,7 +254,7 @@ public abstract class Rygel.MediaObject : GLib.Object {
                                          HTTPServer     http_server)
                                          throws Error {
         var replacements = http_server.get_replacements ();
-        foreach (var res in get_resource_list ()) {
+        foreach (var res in this.get_resource_list ()) {
             if (res.uri == null || res.uri == "") {
                 var uri = http_server.create_uri_for_object (this,
                                                              -1,
@@ -274,7 +274,8 @@ public abstract class Rygel.MediaObject : GLib.Object {
             } else {
                 try {
                     var protocol = this.get_protocol_for_uri (res.uri);
-                    if (protocol != "internal" || http_server.is_local ()) {
+                    if (protocol != null &&
+                        (protocol != "internal" || http_server.is_local ())) {
                         // Exclude internal resources when request is non-local
                         var didl_resource = didl_object.add_resource ();
                         res.serialize (didl_resource, replacements);
@@ -502,10 +503,16 @@ public abstract class Rygel.MediaObject : GLib.Object {
         return "";
     }
 
-    internal string get_protocol_for_uri (string uri) throws Error {
+    internal string? get_protocol_for_uri (string uri) throws Error {
         var scheme = Uri.parse_scheme (uri);
         if (scheme == null) {
             throw new MediaItemError.BAD_URI (_("Bad URI: %s"), uri);
+        }
+
+        var engine = MediaEngine.get_default ();
+        var schemes = engine.get_internal_protocol_schemes ();
+        if (schemes.find_custom (scheme, strcmp) != null) {
+            return null;
         }
 
         if (scheme == "http") {
@@ -517,9 +524,10 @@ public abstract class Rygel.MediaObject : GLib.Object {
             return "rtsp-rtp-udp";
         } else {
             // Assume the protocol to be the scheme of the URI
-            warning (_("Failed to probe protocol for URI %s. Assuming '%s'"),
-                     uri,
-                     scheme);
+            debug ("Could not translate protocol scheme for  %s. " +
+                   " Using '%s' as-is",
+                   uri,
+                   scheme);
 
             return scheme;
         }

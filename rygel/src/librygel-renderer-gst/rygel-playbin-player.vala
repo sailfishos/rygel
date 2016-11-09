@@ -13,18 +13,18 @@
  *         Sivakumar Mani <siva@orexel.com>
  *
  * Rygel is free software; you can redistribute it and/or modify
- * it under the terms of the GNU Lesser General Public License as published by
- * the Free Software Foundation; either version 2 of the License, or
- * (at your option) any later version.
+ * it under the terms of the GNU Lesser General Public
+ * License as published by the Free Software Foundation; either
+ * version 2.1 of the License, or (at your option) any later version.
  *
  * Rygel is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU Lesser General Public License for more details.
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ * Lesser General Public License for more details.
  *
- * You should have received a copy of the GNU Lesser General Public License
- * along with this program; if not, write to the Free Software Foundation,
- * Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
+ * You should have received a copy of the GNU Lesser General Public
+ * License along with this library; if not, write to the Free Software
+ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
 using Gst;
@@ -266,6 +266,8 @@ public class Rygel.Playbin.Player : GLib.Object, Rygel.MediaPlayer {
         }
     }
 
+    public string? user_agent { owned get; set; }
+
     private string _content_features = "";
     private ProtocolInfo protocol_info;
     public string? content_features {
@@ -347,9 +349,10 @@ public class Rygel.Playbin.Player : GLib.Object, Rygel.MediaPlayer {
 
     public int64 byte_position {
        get {
-            int64 pos;
+            int64 pos = 0;
 
-            if (this.playbin.source.query_position (Format.BYTES, out pos)) {
+            if (this.playbin.source != null &&
+                this.playbin.source.query_position (Format.BYTES, out pos)) {
                 return pos;
             } else {
                 return 0;
@@ -364,26 +367,6 @@ public class Rygel.Playbin.Player : GLib.Object, Rygel.MediaPlayer {
                 _("Your GStreamer installation seems to be missing the \"playbin\" element. The Rygel GStreamer renderer implementation cannot work without it"));
         }
         this.setup_playbin ();
-    }
-
-    [Deprecated (since="0.21.5")]
-    public Player.wrap (Gst.Element playbin)
-                        requires (playbin.get_type ().name () == "GstPlayBin") {
-        this.playbin = playbin;
-        this.setup_playbin ();
-    }
-
-    [Deprecated (since="0.23.1")]
-    public static Player get_default () {
-        if (player == null) {
-            try {
-                player = new Player ();
-            } catch (Error error) {
-                assert_not_reached ();
-            }
-        }
-
-        return player;
     }
 
     public static Player instance () throws Error {
@@ -615,6 +598,7 @@ public class Rygel.Playbin.Player : GLib.Object, Rygel.MediaPlayer {
             structure.set_value ("transferMode.dlna.org", this.transfer_mode);
 
             source.extra_headers = structure;
+            source.user_agent = this.user_agent;
         }
     }
 

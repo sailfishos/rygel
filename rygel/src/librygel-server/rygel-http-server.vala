@@ -12,18 +12,18 @@
  * This file is part of Rygel.
  *
  * Rygel is free software; you can redistribute it and/or modify
- * it under the terms of the GNU Lesser General Public License as published by
- * the Free Software Foundation; either version 2 of the License, or
- * (at your option) any later version.
+ * it under the terms of the GNU Lesser General Public
+ * License as published by the Free Software Foundation; either
+ * version 2.1 of the License, or (at your option) any later version.
  *
  * Rygel is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU Lesser General Public License for more details.
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ * Lesser General Public License for more details.
  *
- * You should have received a copy of the GNU Lesser General Public License
- * along with this program; if not, write to the Free Software Foundation,
- * Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
+ * You should have received a copy of the GNU Lesser General Public
+ * License along with this library; if not, write to the Free Software
+ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
 using GUPnP;
@@ -31,6 +31,7 @@ using Gee;
 
 public class Rygel.HTTPServer : GLib.Object, Rygel.StateMachine {
     public string path_root { get; private set; }
+    public string server_name { get; set; }
 
     // Reference to root container of associated ContentDirectory
     public MediaContainer root_container;
@@ -41,9 +42,22 @@ public class Rygel.HTTPServer : GLib.Object, Rygel.StateMachine {
 
     public Cancellable cancellable { get; set; }
 
+    private const string SERVER_TEMPLATE = "%s/%s %s/%s DLNA/1.51 UPnP/1.0";
+
     public HTTPServer (ContentDirectory content_dir,
                        string           name) {
         base ();
+
+        try {
+            var config = MetaConfig.get_default ();
+            this.server_name = config.get_string (name, "server-name");
+        } catch (Error error) {
+            this.server_name = SERVER_TEMPLATE.printf
+                                        (name,
+                                         BuildConfig.PACKAGE_VERSION,
+                                         Environment.get_prgname (),
+                                         BuildConfig.PACKAGE_VERSION);
+        }
 
         this.root_container = content_dir.root_container;
         this.context = content_dir.context;
@@ -58,6 +72,8 @@ public class Rygel.HTTPServer : GLib.Object, Rygel.StateMachine {
         this.replacements = new HashTable <string, string> (str_hash, str_equal);
         this.replacements.insert ("@SERVICE_ADDRESS@",
                                   this.context.host_ip);
+        this.replacements.insert ("@ADDRESS@",
+                                  this.context.host_ip);
         this.replacements.insert ("@SERVICE_INTERFACE@",
                                   this.context.interface);
         this.replacements.insert ("@SERVICE_PORT@",
@@ -66,7 +82,7 @@ public class Rygel.HTTPServer : GLib.Object, Rygel.StateMachine {
     }
 
     public async void run () {
-        context.server.add_handler (this.path_root, this.server_handler);
+        context.add_server_handler (true, this.path_root, this.server_handler);
         context.server.request_aborted.connect (this.on_request_aborted);
         context.server.request_started.connect (this.on_request_started);
 
@@ -155,7 +171,7 @@ public class Rygel.HTTPServer : GLib.Object, Rygel.StateMachine {
                msg.method,
                msg.get_uri ().to_string (false));
         msg.request_headers.foreach ((name, value) => {
-                debug ("%s : %s", name, value);
+                debug ("    %s : %s", name, value);
         });
 
         this.queue_request (new HTTPGet (this, server, msg));

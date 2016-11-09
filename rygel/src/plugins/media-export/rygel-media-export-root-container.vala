@@ -4,18 +4,18 @@
  * This file is part of Rygel.
  *
  * Rygel is free software; you can redistribute it and/or modify
- * it under the terms of the GNU Lesser General Public License as published by
- * the Free Software Foundation; either version 2 of the License, or
- * (at your option) any later version.
+ * it under the terms of the GNU Lesser General Public
+ * License as published by the Free Software Foundation; either
+ * version 2.1 of the License, or (at your option) any later version.
  *
  * Rygel is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU Lesser General Public License for more details.
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ * Lesser General Public License for more details.
  *
- * You should have received a copy of the GNU Lesser General Public License
- * along with this program; if not, write to the Free Software Foundation,
- * Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
+ * You should have received a copy of the GNU Lesser General Public
+ * License along with this library; if not, write to the Free Software
+ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
 using Gee;
@@ -94,7 +94,17 @@ public class Rygel.MediaExport.RootContainer : TrackableDbContainer {
             return object;
         }
 
-        if (id.has_prefix (QueryContainer.PREFIX)) {
+        if (id.has_prefix (DVDContainer.TRACK_PREFIX)) {
+            var parts = id.split (":");
+            var parent_id = DVDContainer.PREFIX + ":" + parts[1];
+            object = yield base.find_object (parent_id, cancellable);
+            var container = object as MediaContainer;
+            if (container != null) {
+                return yield container.find_object (id, cancellable);
+            }
+
+            return null;
+        } else  if (id.has_prefix (QueryContainer.PREFIX)) {
             var factory = QueryContainerFactory.get_default ();
             var container = factory.create_from_hashed_id (id);
             if (container != null) {
@@ -248,15 +258,15 @@ public class Rygel.MediaExport.RootContainer : TrackableDbContainer {
             string id = SEARCH_CONTAINER_PREFIX;
             switch (expression.operand2) {
                 case MediaContainer.MUSIC_ALBUM:
-                    id += "upnp:album,?";
+                    id += VIRTUAL_FOLDERS_MUSIC[1].definition;
 
                     break;
                 case MediaContainer.MUSIC_ARTIST:
-                    id += "dc:creator,?,upnp:album,?";
+                    id += VIRTUAL_FOLDERS_MUSIC[0].definition;
 
                     break;
                 case MediaContainer.MUSIC_GENRE:
-                    id += "dc:genre,?";
+                    id += VIRTUAL_FOLDERS_MUSIC[2].definition;
 
                     break;
                 case MediaContainer.PLAYLIST:
@@ -340,6 +350,13 @@ public class Rygel.MediaExport.RootContainer : TrackableDbContainer {
         return true;
     }
 
+    public override int count_children () {
+        if (!this.initialized) {
+            return 0;
+        } else {
+            return base.count_children ();
+        }
+    }
 
     /**
      * Create a new root container.
@@ -408,7 +425,7 @@ public class Rygel.MediaExport.RootContainer : TrackableDbContainer {
         ArrayList<string> ids;
         try {
             ids = media_db.get_child_ids (FILESYSTEM_FOLDER_ID);
-        } catch (DatabaseError e) {
+        } catch (Database.DatabaseError e) {
             ids = new ArrayList<string> ();
         }
 
@@ -436,7 +453,7 @@ public class Rygel.MediaExport.RootContainer : TrackableDbContainer {
             try {
                 // FIXME: I think this needs to emit objDel events...
                 this.media_db.remove_by_id (id);
-            } catch (DatabaseError error) {
+            } catch (Database.DatabaseError error) {
                 warning (_("Failed to remove entry: %s"), error.message);
             }
         }
@@ -503,7 +520,7 @@ public class Rygel.MediaExport.RootContainer : TrackableDbContainer {
             this.harvester.cancel (file);
             try {
                 this.media_db.remove_by_id (MediaCache.get_id (file));
-            } catch (DatabaseError error) {
+            } catch (Database.DatabaseError error) {
                 warning (_("Failed to remove entry: %s"), error.message);
             }
         }
@@ -511,7 +528,9 @@ public class Rygel.MediaExport.RootContainer : TrackableDbContainer {
         this.harvester.locations.remove_all (old_uris);
 
         if (!new_uris.is_empty) {
-            this.filesystem_container.disconnect (this.filesystem_signal_id);
+            if (this.filesystem_signal_id != 0) {
+                this.filesystem_container.disconnect (this.filesystem_signal_id);
+            }
             this.filesystem_signal_id = 0;
             this.harvester_signal_id = this.harvester.done.connect
                                             (on_initial_harvesting_done);
