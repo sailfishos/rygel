@@ -10,23 +10,24 @@
  * This file is part of Rygel.
  *
  * Rygel is free software; you can redistribute it and/or modify
- * it under the terms of the GNU Lesser General Public License as published by
- * the Free Software Foundation; either version 2 of the License, or
- * (at your option) any later version.
+ * it under the terms of the GNU Lesser General Public
+ * License as published by the Free Software Foundation; either
+ * version 2.1 of the License, or (at your option) any later version.
  *
  * Rygel is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU Lesser General Public License for more details.
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ * Lesser General Public License for more details.
  *
- * You should have received a copy of the GNU Lesser General Public License
- * along with this program; if not, write to the Free Software Foundation,
- * Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
+ * You should have received a copy of the GNU Lesser General Public
+ * License along with this library; if not, write to the Free Software
+ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
 using Gee;
 using GUPnP;
 using Sqlite;
+using Rygel.Database;
 
 public errordomain Rygel.MediaExport.MediaCacheError {
     SQLITE_ERROR,
@@ -52,7 +53,7 @@ internal struct Rygel.MediaExport.ExistsCacheEntry {
  */
 public class Rygel.MediaExport.MediaCache : Object {
     // Private members
-    private Database                           db;
+    private Database.Database                  db;
     private ObjectFactory                      factory;
     private SQLFactory                         sql;
     private HashMap<string, ExistsCacheEntry?> exists_cache;
@@ -164,7 +165,7 @@ public class Rygel.MediaExport.MediaCache : Object {
     public MediaContainer? get_container (string container_id)
                                           throws DatabaseError,
                                                  MediaCacheError {
-        var object = get_object (container_id);
+        var object = this.get_object (container_id);
         if (object != null && !(object is MediaContainer)) {
             throw new MediaCacheError.INVALID_TYPE ("Object with id %s is " +
                                                     "not a MediaContainer",
@@ -184,7 +185,9 @@ public class Rygel.MediaExport.MediaCache : Object {
         // Return the highest object ID in the database so far.
         try {
             return this.query_value (SQLString.MAX_UPDATE_ID);
-        } catch (Error error) { }
+        } catch (Error error) {
+            debug ("Failed to query max update id: %s", error.message);
+        }
 
         return 0;
     }
@@ -209,12 +212,9 @@ public class Rygel.MediaExport.MediaCache : Object {
             object_update_id = (uint32) statement->column_int64 (0);
             container_update_id = (uint32) statement->column_int64 (1);
             total_deleted_child_count = (uint32) statement->column_int64 (2);
-
-            return;
         } catch (Error error) {
-            warning ("Failed to get update ids: %s", error.message);
+            warning (_("Failed to get update IDs: %s"), error.message);
         }
-
     }
 
     public bool exists (File      file,
@@ -393,8 +393,7 @@ public class Rygel.MediaExport.MediaCache : Object {
                                                               statement));
                 children.last ().parent_ref = parent;
             } else {
-                warning ("Inconsistent database: item %s " +
-                         "has no parent %s",
+                warning (_("Inconsistent database: item %s does not have parent %s"),
                          statement.column_text (DetailColumn.ID),
                          parent_id);
             }
@@ -412,7 +411,9 @@ public class Rygel.MediaExport.MediaCache : Object {
                        statement.column_text (0),
                        statement.column_int (1));
             }
-        } catch (Error error) { }
+        } catch (Error error) {
+            debug ("Failed to get database statistics: %s", error.message);
+        }
     }
 
     public ArrayList<string> get_child_ids (string container_id)
@@ -517,9 +518,9 @@ public class Rygel.MediaExport.MediaCache : Object {
 
             return statement->column_text (0);
         } catch (DatabaseError error) {
-            warning ("Failed to get reset token");
+            warning (_("Failed to get reset token"));
 
-            return UUID.get ();
+            return GUPnP.get_uuid ();
         }
     }
 
@@ -529,7 +530,8 @@ public class Rygel.MediaExport.MediaCache : Object {
 
             this.db.exec ("UPDATE schema_info SET reset_token = ?", args);
         } catch (DatabaseError error) {
-            warning ("Failed to persist ServiceResetToken: %s", error.message);
+            warning (_("Failed to persist ServiceResetToken: %s"),
+                     error.message);
         }
     }
 
@@ -538,7 +540,7 @@ public class Rygel.MediaExport.MediaCache : Object {
             this.db.exec ("DELETE FROM object WHERE " +
                           "upnp_id LIKE 'virtual-parent:%'");
         } catch (DatabaseError error) {
-            warning ("Failed to drop virtual folders: %s", error.message);
+            warning (_("Failed to remove virtual folders: %s"), error.message);
         }
     }
 
@@ -552,7 +554,7 @@ public class Rygel.MediaExport.MediaCache : Object {
 
             this.db.exec (this.sql.make (SQLString.MAKE_GUARDED), values);
         } catch (DatabaseError error) {
-            warning ("Failed to mark item %s as guarded (%d): %s",
+            warning (_("Failed to mark item %s as guarded (%d): %s"),
                      object.id,
                      guarded_val,
                      error.message);
@@ -574,11 +576,39 @@ public class Rygel.MediaExport.MediaCache : Object {
         if (object.ref_id == null) {
             object.ref_id = object.id;
         }
-        object.id = UUID.get ();
+        object.id = GUPnP.get_uuid ();
 
         this.save_item (object as MediaFileItem);
 
         return object.id;
+    }
+
+    public void blacklist (File file) {
+        try {
+            GLib.Value[] values = { file.get_uri (),
+                                    new GLib.DateTime.now_utc ().to_unix () };
+            this.db.exec (this.sql.make (SQLString.ADD_TO_BLACKLIST),
+                          values);
+        } catch (DatabaseError error) {
+            warning (_("Failed to add %s to file blacklist: %s"),
+                     file.get_uri (),
+                     error.message);
+        }
+    }
+
+    public bool is_blacklisted (File file) {
+        try {
+            GLib.Value[] values = { file.get_uri () };
+
+            return this.query_value (SQLString.CHECK_BLACKLIST,
+                                     values) == 1;
+        } catch (DatabaseError error) {
+            warning (_("Failed to get whether URI %s is blacklisted: %s"),
+                     file.get_uri (),
+                     error.message);
+
+            return false;
+        }
     }
 
     // Private functions
@@ -589,7 +619,7 @@ public class Rygel.MediaExport.MediaCache : Object {
             return this.query_value (SQLString.IS_GUARDED,
                                      id_value) == 1;
         } catch (DatabaseError error) {
-            warning ("Failed to get whether item %s is guarded: %s",
+            warning (_("Failed to get whether item %s is guarded: %s"),
                      id,
                      error.message);
 
@@ -617,7 +647,7 @@ public class Rygel.MediaExport.MediaCache : Object {
     }
 
     private void open_db (string name) throws Error {
-        this.db = new Database (name);
+        this.db = new Database.Database (name);
         int old_version = -1;
         int current_version = int.parse (SQLFactory.SCHEMA_VERSION);
 
@@ -628,8 +658,7 @@ public class Rygel.MediaExport.MediaCache : Object {
             } else if (old_version == current_version) {
                 upgrader.fix_schema ();
             } else {
-                warning ("The version \"%d\" of the detected database" +
-                         " is newer than our supported version \"%d\"",
+                warning (_("The version \"%d\" of the detected database is newer than our supported version \"%d\""),
                          old_version,
                          current_version);
                 this.db = null;
@@ -653,13 +682,14 @@ public class Rygel.MediaExport.MediaCache : Object {
                         return;
                     }
                 } else {
-                    warning ("Incompatible schema... cannot proceed");
+                    warning (_("Incompatible schema… cannot proceed"));
                     this.db = null;
 
                     return;
                 }
             } catch (DatabaseError error) {
-                warning ("Something weird going on: %s", error.message);
+                warning (_("Invalid database, cannot query sqlite_master table: %s"),
+                         error.message);
                 this.db = null;
 
                 throw new MediaCacheError.GENERAL_ERROR ("Invalid database");
@@ -855,11 +885,11 @@ public class Rygel.MediaExport.MediaCache : Object {
             db.exec (this.sql.make (SQLString.TRIGGER_REFERENCE));
             db.commit ();
             db.analyze ();
-            this.save_reset_token (UUID.get ());
+            this.save_reset_token (GUPnP.get_uuid ());
 
             return true;
         } catch (Error err) {
-            warning ("Failed to create schema: %s", err.message);
+            warning (_("Failed to create database schema: %s"), err.message);
             db.rollback ();
         }
 
@@ -911,21 +941,8 @@ public class Rygel.MediaExport.MediaCache : Object {
                     item.add_uri (uri);
                 }
 
-                // Call the MediaEngine to determine which item representations it can support
-                var media_engine = MediaEngine.get_default ( );
-                media_engine.get_resources_for_item.begin ( item,
-                                                            (obj, res) => {
-                    var added_resources = media_engine
-                                          .get_resources_for_item.end (res);
-                    debug ("Adding %d resources to item source %s",
-                           added_resources.size, item.get_primary_uri ());
-                    foreach (var resrc in added_resources) {
-                       debug ("Media-export item media resource %s",
-                              resrc.get_name ());
-                    }
-                    item.get_resource_list ().add_all (added_resources);
-                  });
-               break;
+                item.add_engine_resources.begin();
+                break;
             default:
                 assert_not_reached ();
         }
@@ -1159,7 +1176,8 @@ public class Rygel.MediaExport.MediaCache : Object {
                 v = "%s%%".printf (exp.operand2);
                 break;
             default:
-                warning ("Unsupported op %d", exp.op);
+                debug ("Unsupported search criteria op %d", exp.op);
+
                 return null;
         }
 
@@ -1170,7 +1188,7 @@ public class Rygel.MediaExport.MediaCache : Object {
         return operator.to_string ();
     }
 
-    private DatabaseCursor exec_cursor (SQLString      id,
+    private Database.Cursor exec_cursor (SQLString      id,
                                         GLib.Value[]?  values = null)
                                         throws DatabaseError {
         return this.db.exec_cursor (this.sql.make (id), values);
@@ -1207,7 +1225,7 @@ public class Rygel.MediaExport.MediaCache : Object {
                                        field[0] == '-' ? "DESC" : "ASC");
                 column_builder.append (column);
             } catch (Error error) {
-                warning ("Skipping unsupported field: %s", field);
+                warning (_("Skipping unsupported sort field: %s"), field);
             }
         }
 

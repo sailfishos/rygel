@@ -7,18 +7,18 @@
  * This file is part of Rygel.
  *
  * Rygel is free software; you can redistribute it and/or modify
- * it under the terms of the GNU Lesser General Public License as published by
- * the Free Software Foundation; either version 2 of the License, or
- * (at your option) any later version.
+ * it under the terms of the GNU Lesser General Public
+ * License as published by the Free Software Foundation; either
+ * version 2.1 of the License, or (at your option) any later version.
  *
  * Rygel is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU Lesser General Public License for more details.
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ * Lesser General Public License for more details.
  *
- * You should have received a copy of the GNU Lesser General Public License
- * along with this program; if not, write to the Free Software Foundation,
- * Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
+ * You should have received a copy of the GNU Lesser General Public
+ * License along with this library; if not, write to the Free Software
+ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
 using Gee;
@@ -40,6 +40,8 @@ public class Rygel.Tracker.SelectionQuery : Query {
                                                 ITEM_VARIABLE + ")))";
     private const string AVAILABLE_FILTER = "(tracker:available(" +
                                             ITEM_VARIABLE + ") = true)";
+
+    private string uri_filter;
 
     public ArrayList<string> variables;
     public ArrayList<string> filters;
@@ -68,6 +70,63 @@ public class Rygel.Tracker.SelectionQuery : Query {
         this.order_by = order_by;
         this.offset = offset;
         this.max_count = max_count;
+
+        ArrayList<string> uris;
+        string[] uri_filters = new string[0];
+
+        var config = MetaConfig.get_default ();
+
+        try {
+            uris = config.get_string_list ("Tracker", "only-export-from");
+        } catch (Error error) {
+            uris = new ArrayList<string> ();
+        }
+
+        var home_dir = File.new_for_path (Environment.get_home_dir ());
+        unowned string pictures_dir = Environment.get_user_special_dir
+                                        (UserDirectory.PICTURES);
+        unowned string videos_dir = Environment.get_user_special_dir
+                                        (UserDirectory.VIDEOS);
+        unowned string music_dir = Environment.get_user_special_dir
+                                        (UserDirectory.MUSIC);
+
+        foreach (var uri in uris) {
+            var file = File.new_for_commandline_arg (uri);
+            if (!file.equal (home_dir)) {
+                var actual_uri = uri;
+
+                if (pictures_dir != null) {
+                    actual_uri = actual_uri.replace ("@PICTURES@", pictures_dir);
+                }
+                if (videos_dir != null) {
+                    actual_uri = actual_uri.replace ("@VIDEOS@", videos_dir);
+                }
+                if (music_dir != null) {
+                    actual_uri = actual_uri.replace ("@MUSIC@", music_dir);
+                }
+
+                if (actual_uri.contains ("@PICTURES@") ||
+                    actual_uri.contains ("@VIDEOS@") ||
+                    actual_uri.contains ("@MUSIC@")) {
+                    continue;
+                }
+
+                // protect against special directories expanding to $HOME
+                file = File.new_for_commandline_arg (actual_uri);
+                if (file.equal (home_dir)) {
+                    continue;
+                }
+
+                uri_filters += "tracker:uri-is-descendant(\"%s\", nie:url(%s))".printf
+                                (file.get_uri (), ITEM_VARIABLE);
+            }
+        }
+
+        if (uri_filters.length != 0) {
+            this.uri_filter = "(%s)".printf (string.joinv ("||", uri_filters));
+        } else {
+            this.uri_filter = null;
+        }
     }
 
     public SelectionQuery.clone (SelectionQuery query) {
@@ -117,6 +176,11 @@ public class Rygel.Tracker.SelectionQuery : Query {
                 filters.add (STRICT_SHARED_FILTER);
             }
         } catch (Error error) {};
+
+        // Limit the files to a set of folders that may have been configured
+        if (uri_filter != null) {
+            filters.add (uri_filter);
+        }
 
         if (filters.size > 0) {
             query += " FILTER (";

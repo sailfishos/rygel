@@ -7,18 +7,18 @@
  * This file is part of Rygel.
  *
  * Rygel is free software; you can redistribute it and/or modify
- * it under the terms of the GNU Lesser General Public License as published by
- * the Free Software Foundation; either version 2 of the License, or
- * (at your option) any later version.
+ * it under the terms of the GNU Lesser General Public
+ * License as published by the Free Software Foundation; either
+ * version 2.1 of the License, or (at your option) any later version.
  *
  * Rygel is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU Lesser General Public License for more details.
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ * Lesser General Public License for more details.
  *
- * You should have received a copy of the GNU Lesser General Public License
- * along with this program; if not, write to the Free Software Foundation,
- * Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
+ * You should have received a copy of the GNU Lesser General Public
+ * License along with this library; if not, write to the Free Software
+ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
 using Gst;
@@ -49,10 +49,33 @@ internal abstract class Rygel.GstUtils {
 
             if (uri.has_prefix ("gst-launch://")) {
                 var description = uri.replace ("gst-launch://", "");
+                description = Soup.URI.decode (description);
 
                 src = Gst.parse_bin_from_description (description, true);
+            } else if (uri.has_prefix ("dvd://")) {
+                src = ElementFactory.make ("dvdreadsrc", "dvdreadsrc");
+                if (src == null) {
+                    warning (_("GStreamer element 'dvdreadsrc' not found. DVD support does not work"));
+
+                    return null;
+                }
+
+                var tmp = new Soup.URI (uri);
+                var query = Soup.Form.decode (tmp.query);
+                if (query.contains ("title")) {
+                    src.title = int.parse (query.lookup ("title"));
+                }
+                src.device = Soup.URI.decode (tmp.path);
             } else {
-                src = Element.make_from_uri (URIType.SRC, uri, null);
+                var file = File.new_for_uri (uri);
+                var path = file.get_path ();
+                if (path != null) {
+                    src = Element.make_from_uri (URIType.SRC,
+                                                 Filename.to_uri (path),
+                                                 null);
+                } else {
+                    src = Element.make_from_uri (URIType.SRC, uri, null);
+                }
             }
 
             if (src.get_class ().find_property ("blocksize") != null) {
@@ -62,7 +85,7 @@ internal abstract class Rygel.GstUtils {
             }
 
             if (src.get_class ().find_property ("tcp-timeout") != null) {
-                // For rtspsrc since some RTSP sources takes a while to start
+   // For rtspsrc since some RTSP sources takes a while to start
                 // transmitting
                 src.tcp_timeout = (int64) 60000000;
             }

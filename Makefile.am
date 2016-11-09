@@ -1,4 +1,4 @@
-SUBDIRS = src data po doc examples
+SUBDIRS = src data tests po doc examples
 
 pkgconfig_DATA= rygel-core-2.6.pc rygel-renderer-2.6.pc rygel-server-2.6.pc
 pkgconfigdir = $(libdir)/pkgconfig
@@ -8,10 +8,11 @@ pkgconfig_DATA += rygel-renderer-gst-2.6.pc
 endif
 
 EXTRA_DIST = rygel-core-2.6.pc.in rygel-renderer-2.6.pc.in \
+             build-aux/config.rpath \
              rygel-server-2.6.pc.in .version \
              build-aux/git-version-gen
 
-DISTCHECK_CONFIGURE_FLAGS =
+AM_DISTCHECK_CONFIGURE_FLAGS = --with-systemduserunitdir='$${libdir}/systemd/user-distcheck'
 
 # Extra clean files so that maintainer-clean removes *everything*
 MAINTAINERCLEANFILES = aclocal.m4 compile config.guess config.sub configure depcomp install-sh ltmain.sh Makefile.in missing config.h.in

@@ -9,18 +9,18 @@
  * This file is part of Rygel.
  *
  * Rygel is free software; you can redistribute it and/or modify
- * it under the terms of the GNU Lesser General Public License as published by
- * the Free Software Foundation; either version 2 of the License, or
- * (at your option) any later version.
+ * it under the terms of the GNU Lesser General Public
+ * License as published by the Free Software Foundation; either
+ * version 2.1 of the License, or (at your option) any later version.
  *
  * Rygel is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU Lesser General Public License for more details.
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ * Lesser General Public License for more details.
  *
- * You should have received a copy of the GNU Lesser General Public License
- * along with this program; if not, write to the Free Software Foundation,
- * Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
+ * You should have received a copy of the GNU Lesser General Public
+ * License along with this library; if not, write to the Free Software
+ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
 using GUPnP;
@@ -105,7 +105,7 @@ public class Rygel.ContentDirectory: Service {
             this.service_reset_token = trackable.get_service_reset_token ();
             this.system_update_id = trackable.get_system_update_id ();
         } else {
-            this.service_reset_token = UUID.get ();
+            this.service_reset_token = GUPnP.get_uuid ();
             this.system_update_id = 0;
         }
 
@@ -706,7 +706,7 @@ public class Rygel.ContentDirectory: Service {
 
         var plugin = this.root_device.resource_factory as MediaServerPlugin;
         plugin.active = false;
-        this.service_reset_token = UUID.get ();
+        this.service_reset_token = GUPnP.get_uuid ();
         if (this.root_container is TrackableContainer) {
             var trackable = this.root_container as TrackableContainer;
             trackable.set_service_reset_token (this.service_reset_token);

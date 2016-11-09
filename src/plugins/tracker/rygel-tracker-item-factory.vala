@@ -13,18 +13,18 @@
  * This file is part of Rygel.
  *
  * Rygel is free software; you can redistribute it and/or modify
- * it under the terms of the GNU Lesser General Public License as published by
- * the Free Software Foundation; either version 2 of the License, or
- * (at your option) any later version.
+ * it under the terms of the GNU Lesser General Public
+ * License as published by the Free Software Foundation; either
+ * version 2.1 of the License, or (at your option) any later version.
  *
  * Rygel is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU Lesser General Public License for more details.
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ * Lesser General Public License for more details.
  *
- * You should have received a copy of the GNU Lesser General Public License
- * along with this program; if not, write to the Free Software Foundation,
- * Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
+ * You should have received a copy of the GNU Lesser General Public
+ * License along with this library; if not, write to the Free Software
+ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
 using Gee;
@@ -52,7 +52,7 @@ public abstract class Rygel.Tracker.ItemFactory {
     public string category;
     public string category_iri;
     public string upnp_class;
-    public string upload_dir;
+    public string? upload_dir;
 
     public ArrayList<string> properties;
 
@@ -138,19 +138,9 @@ public abstract class Rygel.Tracker.ItemFactory {
         item.add_uri (uri);
     }
 
-    protected virtual void add_resources (MediaItem item) throws GLib.Error {
-        // Call the MediaEngine to determine which item representations it can support
-        var media_engine = MediaEngine.get_default ( );
-        media_engine.get_resources_for_item.begin (item,
-                                                   (obj, res) => {
-                var added_resources = media_engine.get_resources_for_item.end (res);
-                debug ("Adding %d resources to item source %s",
-                       added_resources.size, item.get_primary_uri () );
-                foreach (var resrc in added_resources) {
-                    debug ("Tracker item media resource %s", resrc.get_name ());
-                }
-                item.get_resource_list ().add_all (added_resources);
-            });
+    protected virtual void add_resources (MediaFileItem item)
+                                          throws GLib.Error {
+        item.add_engine_resources.begin ();
     }
 }
 

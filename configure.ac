@@ -33,19 +33,18 @@ GOBJECT_INTROSPECTION_CHECK([1.33.4])
 
 dnl Required versions of library packages
 dnl Not all of these are actually used, depending on the configure options.
-GLIB_REQUIRED=2.34.0
+GLIB_REQUIRED=2.40.0
 LIBXML_REQUIRED=2.7
-VALA_REQUIRED=0.22.0
+VALA_REQUIRED=0.24.0
 VALADOC_REQUIRED=0.2
 GSSDP_REQUIRED=0.13.0
-GUPNP_REQUIRED=0.19.0
-GUPNP_AV_REQUIRED=0.12.4
+GUPNP_REQUIRED=0.20.14
+GUPNP_AV_REQUIRED=0.12.8
 GUPNP_DLNA_REQUIRED=0.9.4
 GSTREAMER_REQUIRED=1.0
 GSTPBU_REQUIRED=1.0
 GIO_REQUIRED=2.26
 GEE_REQUIRED=0.8.0
-UUID_REQUIRED=1.41.3
 LIBSOUP_REQUIRED=2.44.0
 GTK_REQUIRED=3.0
 MEDIAART_REQUIRED=0.7.0
@@ -61,39 +60,117 @@ GSTREAMER_AUDIO_REQUIRED=1.0
 dnl Additional requirements for tracker plugin
 TRACKER_SPARQL_REQUIRED_MIN=0.14.0
 
-VALAFLAGS="--enable-deprecated --target-glib=2.32 $VALAFLAGS"
+VALAFLAGS="--enable-deprecated --target-glib=2.40 $VALAFLAGS"
 
+########################################################
+## Base
+########################################################
 RYGEL_BASE_MODULES="gupnp-1.0 >= $GUPNP_REQUIRED gee-0.8 >= $GEE_REQUIRED"
-PKG_CHECK_MODULES([LIBRYGEL_CORE_DEPS], [$RYGEL_BASE_MODULES uuid >= $UUID_REQUIRED gssdp-1.0 >= $GSSDP_REQUIRED gio-2.0 >= $GIO_REQUIRED gmodule-2.0 libxml-2.0 >= $LIBXML_REQUIRED])
+
+PKG_CHECK_MODULES([LIBRYGEL_CORE_DEPS],
+                  [$RYGEL_BASE_MODULES
+                   gssdp-1.0 >= $GSSDP_REQUIRED
+                   gio-2.0 >= $GIO_REQUIRED
+                   gmodule-2.0
+                   libxml-2.0 >= $LIBXML_REQUIRED])
 RYGEL_BASE_MODULES_VALAFLAGS='--pkg gupnp-1.0 --pkg gee-0.8'
+
+########################################################
+## Core
+########################################################
 LIBRYGEL_CORE_DEPS_VALAFLAGS="$RYGEL_BASE_MODULES_VALAFLAGS --pkg gssdp-1.0 --pkg gio-2.0 --pkg gmodule-2.0 --pkg posix"
 AC_SUBST([LIBRYGEL_CORE_DEPS_VALAFLAGS])
 
+########################################################
+## Common
+########################################################
 RYGEL_COMMON_MODULES="$RYGEL_BASE_MODULES gupnp-av-1.0 >= $GUPNP_AV_REQUIRED"
-PKG_CHECK_MODULES([LIBRYGEL_SERVER_DEPS], [$RYGEL_COMMON_MODULES uuid >=
-                   $UUID_REQUIRED gssdp-1.0 >= $GSSDP_REQUIRED gio-2.0 >=
-                   $GIO_REQUIRED gmodule-2.0 libxml-2.0 >= $LIBXML_REQUIRED
-                   libsoup-2.4 >= $LIBSOUP_REQUIRED libmediaart-2.0 >=
-                   $MEDIAART_REQUIRED])
 RYGEL_COMMON_MODULES_VALAFLAGS="$RYGEL_BASE_MODULES_VALAFLAGS --pkg gupnp-av-1.0"
+
+########################################################
+## Db
+########################################################
+RYGEL_CHECK_PACKAGES([sqlite3])
+PKG_CHECK_MODULES([LIBRYGEL_DB_DEPS],
+                  [$RYGEL_COMMON_MODULES
+                   gio-2.0 >= $GIO_REQUIRED
+                   sqlite3 >= $LIBSQLITE3_REQUIRED])
+LIBRYGEL_DB_DEPS_VALAFLAGS="$RYGEL_COMMON_MODULES_VALAFLAGS --pkg sqlite3 --pkg gio-2.0"
+AC_CHECK_HEADER([unistr.h],
+                AC_CHECK_LIB([unistring],
+                             [u8_strcoll],
+                             [have_unistring=yes],[have_unistring=no]))
+AS_IF([test "x$have_unistring" = "xyes"],
+      [
+        AC_DEFINE([HAVE_UNISTRING], [1], [Use libunistring for collation])
+        LIBRYGEL_DB_DEPS_LIBS="$LIBRYGEL_DB_DEPS_LIBS -lunistring"
+      ])
+AC_SUBST([LIBRYGEL_DB_DEPS_VALAFLAGS])
+
+
+########################################################
+## Server
+########################################################
+PKG_CHECK_MODULES([LIBRYGEL_SERVER_DEPS],
+                  [$RYGEL_COMMON_MODULES
+                   gssdp-1.0 >= $GSSDP_REQUIRED
+                   gio-2.0 >= $GIO_REQUIRED
+                   gmodule-2.0
+                   libxml-2.0 >= $LIBXML_REQUIRED
+                   libsoup-2.4 >= $LIBSOUP_REQUIRED
+                   libmediaart-2.0 >= $MEDIAART_REQUIRED])
 LIBRYGEL_SERVER_DEPS_VALAFLAGS="$RYGEL_COMMON_MODULES_VALAFLAGS --pkg gssdp-1.0 --pkg gio-2.0 --pkg libsoup-2.4 --pkg gmodule-2.0 --pkg libmediaart-2.0"
 AC_SUBST([LIBRYGEL_SERVER_DEPS_VALAFLAGS])
 
-PKG_CHECK_MODULES([LIBRYGEL_RENDERER_DEPS], [$RYGEL_COMMON_MODULES gio-2.0 >= $GIO_REQUIRED libsoup-2.4 >= $LIBSOUP_REQUIRED])
+########################################################
+## Renderer
+########################################################
+PKG_CHECK_MODULES([LIBRYGEL_RENDERER_DEPS],
+                  [$RYGEL_COMMON_MODULES
+                   gio-2.0 >= $GIO_REQUIRED
+                   libsoup-2.4 >= $LIBSOUP_REQUIRED])
 LIBRYGEL_RENDERER_DEPS_VALAFLAGS="$RYGEL_COMMON_MODULES_VALAFLAGS --pkg gio-2.0 --pkg libsoup-2.4"
 AC_SUBST([LIBRYGEL_RENDERER_DEPS_VALAFLAGS])
 
-PKG_CHECK_MODULES([RYGEL_DEPS], [$RYGEL_COMMON_MODULES gio-2.0 >= $GIO_REQUIRED gssdp-1.0 >= $GSSDP_REQUIRED])
+PKG_CHECK_MODULES([LIBRYGEL_RUIH_DEPS],
+                  [$RYGEL_COMMON_MODULES
+                   gio-2.0 >= $GIO_REQUIRED
+                   gee-0.8 >= $GEE_REQUIRED
+                   libxml-2.0 >= $LIBXML_REQUIRED])
+LIBRYGEL_RUIH_DEPS_VALAFLAGS="$RYGEL_COMMON_MODULES_VALAFLAGS --pkg gio-2.0 --pkg gee-0.8 --pkg libxml-2.0"
+AC_SUBST([LIBRYGEL_RUIH_DEPS_VALAFLAGS])
+
+########################################################
+## Rygel
+########################################################
+PKG_CHECK_MODULES([RYGEL_DEPS],
+                  [$RYGEL_COMMON_MODULES
+                   gio-2.0 >= $GIO_REQUIRED
+                   gssdp-1.0 >= $GSSDP_REQUIRED])
+
 
 # Not all tests use all of these dependencies,
 # but having one set of dependencies keeps things simple.
-PKG_CHECK_MODULES([TEST_DEPS], [$RYGEL_COMMON_MODULES uuid >= $UUID_REQUIRED gio-2.0 >= $GIO_REQUIRED gssdp-1.0 >= $GSSDP_REQUIRED libsoup-2.4 >= $LIBSOUP_REQUIRED libxml-2.0 >= $LIBXML_REQUIRED])
+
+########################################################
+## Tests
+########################################################
+PKG_CHECK_MODULES([TEST_DEPS],
+                  [$RYGEL_COMMON_MODULES
+                   gio-2.0 >= $GIO_REQUIRED
+                   gssdp-1.0 >= $GSSDP_REQUIRED
+                   libsoup-2.4 >= $LIBSOUP_REQUIRED
+                   libxml-2.0 >= $LIBXML_REQUIRED])
 TEST_DEPS_VALAFLAGS="$RYGEL_COMMON_MODULES_VALAFLAGS --pkg gio-2.0 --pkg gssdp-1.0 --pkg libsoup-2.4 --pkg libxml-2.0 --pkg gmodule-2.0"
 AC_SUBST([TEST_DEPS_VALAFLAGS])
 
-PKG_CHECK_MODULES([EXAMPLE_DEPS], [$RYGEL_COMMON_MODULES gio-2.0 >= $GIO_REQUIRED gssdp-1.0 >= $GSSDP_REQUIRED])
-
-
+########################################################
+## Examples
+########################################################
+PKG_CHECK_MODULES([EXAMPLE_DEPS],
+                  [$RYGEL_COMMON_MODULES
+                   gio-2.0 >= $GIO_REQUIRED
+                   gssdp-1.0 >= $GSSDP_REQUIRED])
 
 dnl Media engine to use
 BUILT_ENGINES="librygel-media-engine-simple"
@@ -117,8 +194,9 @@ AS_IF([test "x$with_media_engine" = "xgstreamer"],
                            gstreamer-pbutils-1.0 >= $GSTPBU_REQUIRED
                            gstreamer-app-1.0 >= $GSTREAMER_APP_REQUIRED
                            gupnp-dlna-2.0 >= $GUPNP_DLNA_REQUIRED
+                           libsoup-2.4 >= $LIBSOUP_REQUIRED
                            gio-2.0 >= $GIO_REQUIRED])
-        RYGEL_MEDIA_ENGINE_GSTREAMER_DEPS_VALAFLAGS="$RYGEL_COMMON_MODULES_VALAFLAGS --pkg gstreamer-base-1.0 --pkg gstreamer-pbutils-1.0 --pkg gupnp-dlna-2.0"
+        RYGEL_MEDIA_ENGINE_GSTREAMER_DEPS_VALAFLAGS="$RYGEL_COMMON_MODULES_VALAFLAGS --pkg gstreamer-base-1.0 --pkg gstreamer-pbutils-1.0 --pkg gupnp-dlna-2.0 --pkg libsoup-2.4"
         AC_SUBST([RYGEL_MEDIA_ENGINE_GSTREAMER_DEPS_VALAFLAGS])
 
         PKG_CHECK_MODULES([LIBRYGEL_RENDERER_GST_DEPS], [$RYGEL_COMMON_MODULES gstreamer-1.0 >= $GSTREAMER_REQUIRED gstreamer-audio-1.0 >= $GSTREAMER_AUDIO_REQUIRED gio-2.0 >= $GIO_REQUIRED])
@@ -142,16 +220,6 @@ AS_IF([test "x$enable_mpris_plugin" = "xyes"],
     PKG_CHECK_MODULES([RYGEL_PLUGIN_MPRIS_DEPS], [$RYGEL_COMMON_MODULES gio-2.0 >= $GIO_REQUIRED])
   ])
 
-RYGEL_ADD_PLUGIN([mediathek],[ZDF Mediathek],[no])
-AS_IF([test "x$enable_mediathek_plugin" = "xyes"],
-  [
-    PKG_CHECK_MODULES([RYGEL_PLUGIN_MEDIATHEK_DEPS],
-                      [$RYGEL_COMMON_MODULES
-                       gio-2.0 >= $GIO_REQUIRED
-                       libsoup-2.4 >= $LIBSOUP_REQUIRED
-                       libxml-2.0 >= $LIBXML_REQUIRED])
-  ])
-
 RYGEL_ADD_PLUGIN([ruih],[Ruih],[yes])
 AS_IF([test "x$enable_ruih_plugin" = "xyes"],
   [
@@ -160,6 +228,18 @@ AS_IF([test "x$enable_ruih_plugin" = "xyes"],
                        gio-2.0 >= $GIO_REQUIRED
                        libsoup-2.4 >= $LIBSOUP_REQUIRED
                        libxml-2.0 >= $LIBXML_REQUIRED])
+  ])
+
+
+RYGEL_ADD_PLUGIN([lms],[LightMediaScanner],[yes])
+AS_IF([test "x$enable_lms_plugin" = "xyes"],
+  [
+    PKG_CHECK_MODULES([RYGEL_PLUGIN_LMS_DEPS],
+                      [$RYGEL_COMMON_MODULES
+                       gio-2.0 >= $GIO_REQUIRED
+                       sqlite3 >= $LIBSQLITE3_REQUIRED])
+    RYGEL_PLUGIN_LMS_DEPS_VALAFLAGS="$RYGEL_COMMON_MODULES_VALAFLAGS --pkg gio-2.0 --pkg gee-0.8 --pkg sqlite3"
+    AC_SUBST([RYGEL_PLUGIN_LMS_DEPS_VALAFLAGS])
   ])
 
 AS_IF([test "x$with_media_engine" = "xgstreamer"],
@@ -175,6 +255,7 @@ AS_IF([test "x$with_media_engine" = "xgstreamer"],
           [
             PKG_CHECK_MODULES([RYGEL_PLUGIN_MEDIA_EXPORT_DEPS],
                               [$RYGEL_COMMON_MODULES gio-2.0 >= $GIO_REQUIRED
+                               gio-unix-2.0 >= $GIO_REQUIRED
                                gupnp-dlna-2.0 >= $GUPNP_DLNA_REQUIRED
                                gupnp-dlna-gst-2.0 >= $GUPNP_DLNA_REQUIRED
                                gstreamer-app-1.0 >= $GSTREAMER_APP_REQUIRED
@@ -182,8 +263,9 @@ AS_IF([test "x$with_media_engine" = "xgstreamer"],
                                gstreamer-pbutils-1.0 >= $GSTPBU_REQUIRED
                                libsoup-2.4 >= $LIBSOUP_REQUIRED
                                sqlite3 >= $LIBSQLITE3_REQUIRED
+                               libxml-2.0 >= $LIBXML_REQUIRED
                                libmediaart-2.0 >= $MEDIAART_REQUIRED
-                               uuid])
+                               gdk-pixbuf-2.0])
             RYGEL_PLUGIN_MEDIA_EXPORT_DEPS_VALAFLAGS="$RYGEL_COMMON_MODULES_VALAFLAGS --pkg gupnp-dlna-2.0 --pkg gupnp-dlna-gst-2.0 --pkg gstreamer-tag-1.0 --pkg gstreamer-app-1.0 --pkg gstreamer-pbutils-1.0 --pkg sqlite3 --pkg libmediaart-2.0"
             AC_SUBST([RYGEL_PLUGIN_MEDIA_EXPORT_DEPS_VALAFLAGS])
           ])
@@ -191,8 +273,10 @@ AS_IF([test "x$with_media_engine" = "xgstreamer"],
         RYGEL_ADD_PLUGIN([gst-launch],[GStreamer launchline],[no])
         AS_IF([test "x$enable_gst_launch_plugin" = "xyes"],
           [
-            PKG_CHECK_MODULES([RYGEL_PLUGIN_GST_LAUNCH_DEPS], [$RYGEL_COMMON_MODULES])
-            RYGEL_PLUGIN_GST_LAUNCH_DEPS_VALAFLAGS="$RYGEL_COMMON_MODULES_VALAFLAGS"
+            PKG_CHECK_MODULES([RYGEL_PLUGIN_GST_LAUNCH_DEPS],
+                              [$RYGEL_COMMON_MODULES
+                              libsoup-2.4 >= $LIBSOUP_REQUIRED])
+            RYGEL_PLUGIN_GST_LAUNCH_DEPS_VALAFLAGS="$RYGEL_COMMON_MODULES_VALAFLAGS --pkg libsoup-2.4"
             AC_SUBST([RYGEL_PLUGIN_GST_LAUNCH_DEPS_VALAFLAGS])
           ])
 
@@ -310,63 +394,46 @@ AS_IF([test "x$enable_coverage" != "xno"],
   ]
 )
 
+dnl systemd user unit directory
+AC_ARG_WITH([systemduserunitdir],
+	    AS_HELP_STRING([--with-systemduserunitdir=DIR], [Directory for systemd user service files]),
+	    [],
+	    [with_systemduserunitdir=$($PKG_CONFIG --variable=systemduserunitdir systemd)])
+if test x$with_systemduserunitdir != xno; then
+	AC_SUBST([systemduserunitdir], [$with_systemduserunitdir])
+fi
+
 dnl Check additional requirements for MediaExport plugins
 if test "x$enable_media_export_plugin" = "xyes";
 then
-    RYGEL_CHECK_PACKAGES([sqlite3 gstreamer-tag-1.0 gstreamer-app-1.0])
-    AC_CHECK_HEADER([unistr.h],
-                    AC_CHECK_LIB([unistring],
-                                 [u8_strcoll],
-                                 [have_unistring=yes],[have_unistring=no]))
-    if test "x$have_unistring" = "xyes"; then
-        AC_DEFINE([HAVE_UNISTRING],[1],[Use libunistring for collation])
-        RYGEL_PLUGIN_MEDIA_EXPORT_DEPS_LIBS="$RYGEL_PLUGIN_MEDIA_EXPORT_DEPS_LIBS -lunistring"
-    fi
+    RYGEL_CHECK_PACKAGES([gstreamer-tag-1.0 gstreamer-app-1.0])
 fi
 
+dnl Check additional requirements for LMS plugin
+if test "x$enable_lms_plugin" = "xyes";
+then
+    RYGEL_CHECK_PACKAGES([sqlite3])
+fi
 
 RYGEL_ADD_PLUGIN([tracker],[Tracker],[yes])
 AS_IF([test "x$enable_tracker_plugin" = "xyes"],
   [
-    PKG_CHECK_MODULES([RYGEL_PLUGIN_TRACKER_DEPS], [$RYGEL_COMMON_MODULES gio-2.0 >= $GIO_REQUIRED])
+    # Search available Tracker version
+    trackerpkg=""
+    m4_foreach([VERSION], [[1.0], [0.16], [0.15], [0.14]],
+                 [PKG_CHECK_EXISTS([tracker-sparql-VERSION >= $TRACKER_SPARQL_REQUIRED_MIN],
+                                   [ trackerpkg="tracker-sparql-VERSION"
+                                     tracker_api_version="VERSION"
+                                   ])
+                 ])
 
-    tracker_api_version="0.14"
-    PKG_CHECK_MODULES(TRACKER_SPARQL,
-                      tracker-sparql-0.14 >= $TRACKER_SPARQL_REQUIRED_MIN,
-                      [tracker_api_version="0.14"],
-                      [tracker_api_version=""])
-    AS_IF([test "x$[]tracker_api_version" = "x"],
-          [
-            PKG_CHECK_MODULES(TRACKER_SPARQL,
-                              tracker-sparql-0.15 >=  $TRACKER_SPARQL_REQUIRED_MIN,
-                              [tracker_api_version="0.15"],
-                              [tracker_api_version=""])
-          ])
-    AS_IF([test "x$[]tracker_api_version" = "x"],
-          [
-            PKG_CHECK_MODULES(TRACKER_SPARQL,
-                              tracker-sparql-0.16 >=  $TRACKER_SPARQL_REQUIRED_MIN,
-                              [tracker_api_version="0.16"],
-                              [tracker_api_version=""])
-          ])
-    AS_IF([test "x$[]tracker_api_version" = "x"],
-          [
-            PKG_CHECK_MODULES(TRACKER_SPARQL,
-                              tracker-sparql-0.18 >=  $TRACKER_SPARQL_REQUIRED_MIN,
-                              [tracker_api_version="0.18"],
-                              [tracker_api_version=""])
-          ])
-     AS_IF([test "x$[]tracker_api_version" = "x"],
-	  [
-            PKG_CHECK_MODULES(TRACKER_SPARQL,
-                              tracker-sparql-1.0 >=  $TRACKER_SPARQL_REQUIRED_MIN,
-                              [tracker_api_version="1.0"],
-	                      [])
-	  ])
+    PKG_CHECK_MODULES([RYGEL_PLUGIN_TRACKER_DEPS],
+                      [$RYGEL_COMMON_MODULES gio-2.0 >= $GIO_REQUIRED ${trackerpkg}])
+
     AS_IF([test "x$enable_vala" = "xyes"],
-          [VALA_CHECK_PACKAGES([tracker-sparql-$tracker_api_version])])
+          [VALA_CHECK_PACKAGES([${trackerpkg}])])
 
-    RYGEL_PLUGIN_TRACKER_DEPS_VALAFLAGS="--pkg tracker-sparql-$tracker_api_version"
+    RYGEL_PLUGIN_TRACKER_DEPS_VALAFLAGS="--pkg ${trackerpkg}"
     AC_SUBST([RYGEL_PLUGIN_TRACKER_DEPS_VALAFLAGS])
   ])
 
@@ -376,22 +443,29 @@ RYGEL_CHECK_VALA([$VALA_REQUIRED],
                   gupnp-av-1.0
                   gio-2.0
                   gee-0.8
-                  posix])
+                  posix
+                  libmediaart-2.0])
 
 dnl Gettext
+AM_GNU_GETTEXT_VERSION([0.19.7])
+AM_GNU_GETTEXT([external])
+
 GETTEXT_PACKAGE=rygel
 AC_SUBST(GETTEXT_PACKAGE)
 AC_DEFINE_UNQUOTED(GETTEXT_PACKAGE, ["$GETTEXT_PACKAGE"], 
   [Define the gettext package to be used])
-
-AM_GLIB_GNU_GETTEXT
-IT_PROG_INTLTOOL([0.40.0])
 
 dnl Shave the output
 AM_SILENT_RULES([yes])
 
 dnl documenation
 AC_PATH_PROG([XSLTPROC], [xsltproc])
+AS_IF([test "x$XSLTPROC" != "x"],
+      [
+       AC_MSG_CHECKING([whether $XSLTPROC can create manpages])
+       $XSLTPROC -nonet http://docbook.sourceforge.net/release/xsl/current/manpages/docbook.xsl >/dev/null 2>&1
+       AS_IF([test "$?" = 0], [AC_MSG_RESULT([yes])], [XSLTPROC=""; AC_MSG_RESULT([no])])
+      ])
 AM_CONDITIONAL([HAVE_XSLTPROC], [test x"$XSLTPROC" != x])
 
 dnl Use valadoc and gtk-doc for API documentation:
@@ -421,7 +495,9 @@ AS_IF([test "x$enable_apidocs" != "xno"], [
 AM_CONDITIONAL(ENABLE_VALADOC, test x$found_valadoc = xyes)
 
 AC_SUBST([RYGEL_PLUGIN_LINKER_FLAGS],
-         ["-module -avoid-version"])
+         ["-module -avoid-version -shared -export-dynamic -export-symbols-regex 'module_init'"])
+AC_SUBST([RYGEL_ENGINE_LINKER_FLAGS],
+         ["-module -avoid-version -shared -export-dynamic -export-symbols-regex 'module_get_instance'"])
 AC_SUBST([RYGEL_PLUGIN_DIR],
          [${libdir}/rygel-2.6/plugins])
 AC_SUBST([RYGEL_MEDIA_ENGINE_DIR],
@@ -431,6 +507,7 @@ AC_CONFIG_FILES([
 Makefile
 src/Makefile
 src/librygel-core/Makefile
+src/librygel-db/Makefile
 src/librygel-renderer/Makefile
 src/librygel-renderer-gst/Makefile
 src/librygel-server/Makefile
@@ -454,11 +531,10 @@ data/icons/48x48/Makefile
 data/icons/120x120/Makefile
 data/icons/128x128/Makefile
 data/icons/scalable/Makefile
-data/rygel.desktop.in
-data/rygel-preferences.desktop.in
 doc/Makefile
 doc/reference/Makefile
 doc/reference/librygel-core/Makefile
+doc/reference/librygel-db/Makefile
 doc/reference/librygel-renderer/Makefile
 doc/reference/librygel-server/Makefile
 doc/reference/librygel-renderer-gst/Makefile
@@ -479,6 +555,7 @@ examples/server-plugins/vala/Makefile
 examples/server-plugins/vala/example-server-vala.plugin
 examples/server-plugins/C/Makefile
 examples/server-plugins/C/example-server-c.plugin
+tests/Makefile
 ])
 AC_OUTPUT
 
@@ -503,10 +580,11 @@ echo "
         examples:               ${enable_example_plugins}
         tracker:                ${enable_tracker_plugin}
             version:            ${tracker_api_version}
-        mediathek:              ${enable_mediathek_plugin}
         media-export            ${enable_media_export_plugin}
+        lightmediascanner       ${enable_lms_plugin}
         external:               ${enable_external_plugin}
         MPRIS2:                 ${enable_mpris_plugin}
         gst-launch:             ${enable_gst_launch_plugin}
         playbin:                ${enable_playbin_plugin}
+        RUIH plugin:            ${enable_ruih_plugin}
 "

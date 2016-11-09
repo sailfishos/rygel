@@ -4,18 +4,18 @@
  * This file is part of Rygel.
  *
  * Rygel is free software; you can redistribute it and/or modify
- * it under the terms of the GNU Lesser General Public License as published by
- * the Free Software Foundation; either version 2 of the License, or
- * (at your option) any later version.
+ * it under the terms of the GNU Lesser General Public
+ * License as published by the Free Software Foundation; either
+ * version 2.1 of the License, or (at your option) any later version.
  *
  * Rygel is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU Lesser General Public License for more details.
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ * Lesser General Public License for more details.
  *
- * You should have received a copy of the GNU Lesser General Public License
- * along with this program; if not, write to the Free Software Foundation,
- * Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
+ * You should have received a copy of the GNU Lesser General Public
+ * License along with this library; if not, write to the Free Software
+ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
 using GLib;
@@ -37,6 +37,7 @@ internal class FileQueueEntry {
 public class Rygel.MediaExport.HarvestingTask : Rygel.StateMachine,
                                                 GLib.Object {
     public File origin;
+    private Timer timer;
     private MetadataExtractor extractor;
     private MediaCache cache;
     private GLib.Queue<MediaContainer> containers;
@@ -63,12 +64,17 @@ public class Rygel.MediaExport.HarvestingTask : Rygel.StateMachine,
         this.parent = parent;
         this.cache = MediaCache.get_default ();
 
-        this.extractor.extraction_done.connect (on_extracted_cb);
-        this.extractor.error.connect (on_extractor_error_cb);
+        this.extractor.extraction_done.connect (this.on_extracted_cb);
+        this.extractor.error.connect (this.on_extractor_error_cb);
 
         this.files = new LinkedList<FileQueueEntry> ();
         this.containers = new GLib.Queue<MediaContainer> ();
         this.monitor = monitor;
+        this.timer = new Timer ();
+    }
+
+    ~HarvestingTask () {
+        this.extractor.stop ();
     }
 
     public void cancel () {
@@ -76,6 +82,7 @@ public class Rygel.MediaExport.HarvestingTask : Rygel.StateMachine,
         // cancelled like file monitoring, other harvesters etc.
         this.cancellable = new Cancellable ();
         this.cancellable.cancel ();
+        this.extractor.stop ();
     }
 
     /**
@@ -94,7 +101,10 @@ public class Rygel.MediaExport.HarvestingTask : Rygel.StateMachine,
      * only one event is sent when all the children are done.
      */
     public async void run () {
+        this.timer.reset ();
         try {
+            this.extractor.run.begin ();
+
             var info = yield this.origin.query_info_async
                                         (HARVESTER_ATTRIBUTES,
                                          FileQueryInfoFlags.NONE,
@@ -110,6 +120,7 @@ public class Rygel.MediaExport.HarvestingTask : Rygel.StateMachine,
                 this.completed ();
             }
         } catch (Error error) {
+            this.extractor.stop ();
             if (!(error is IOError.CANCELLED)) {
                 warning (_("Failed to harvest file %s: %s"),
                          this.origin.get_uri (),
@@ -174,6 +185,15 @@ public class Rygel.MediaExport.HarvestingTask : Rygel.StateMachine,
             return false;
         }
 
+
+        if (info.get_file_type () == FileType.DIRECTORY) {
+            // Check if we have an "exploded" DVD structure
+            if (file.get_child ("VIDEO_TS").query_exists ()) {
+                info.set_file_type (FileType.REGULAR);
+                info.set_content_type ("application/x-cd-image");
+            }
+        }
+
         if (info.get_file_type () == FileType.DIRECTORY) {
             // queue directory for processing later
             this.monitor.add.begin (file);
@@ -193,7 +213,7 @@ public class Rygel.MediaExport.HarvestingTask : Rygel.StateMachine,
         } else {
             // Check if the file needs to be harvested at all either because
             // it is denied by filter or it hasn't updated
-            if (Harvester.is_eligible (info)) {
+            if (Harvester.is_eligible (file, info)) {
                 return this.push_if_changed_or_unknown (file, info);
             }
 
@@ -253,7 +273,7 @@ public class Rygel.MediaExport.HarvestingTask : Rygel.StateMachine,
             foreach (var child in container.children) {
                 this.cache.remove_by_id (child);
             }
-        } catch (DatabaseError error) {
+        } catch (Database.DatabaseError error) {
             warning (_("Failed to get children of container %s: %s"),
                      container.id,
                      error.message);
@@ -277,42 +297,44 @@ public class Rygel.MediaExport.HarvestingTask : Rygel.StateMachine,
         } else {
             // nothing to do
             this.completed ();
+            message ("Harvesting of %s done in %f",
+                    origin.get_uri (),
+                    timer.elapsed ());
         }
 
         return false;
     }
 
     private void on_extracted_cb (File               file,
-                                  DiscovererInfo?    dlna,
-                                  GUPnPDLNA.Profile? profile,
-                                  FileInfo           file_info) {
+                                  Variant?           info) {
+        if (!file.equal (this.files.peek ().file)) {
+            debug ("Not for us, ignoring");
+        }
+
         if (this.cancellable.is_cancelled ()) {
             this.completed ();
         }
 
-        MediaFileItem item;
-        if (dlna == null) {
-            item = ItemFactory.create_simple (this.containers.peek_head (),
-                                              file,
-                                              file_info);
-        } else {
-            item = ItemFactory.create_from_info (this.containers.peek_head (),
-                                                 file,
-                                                 dlna,
-                                                 profile,
-                                                 file_info);
-        }
+        try {
+            var parent = this.containers.peek_head ();
+            var item = ItemFactory.create_from_variant (parent,
+                                                        file,
+                                                        info);
 
-        if (item != null) {
-            item.parent_ref = this.containers.peek_head ();
-            // This is only necessary to generate the proper <objAdd LastChange
-            // entry
-            if (this.files.peek ().known) {
-                (item as UpdatableObject).non_overriding_commit.begin ();
-            } else {
-                var container = item.parent as TrackableContainer;
-                container.add_child_tracked.begin (item) ;
+            if (item != null) {
+                item.parent_ref = parent;
+                // This is only necessary to generate the proper <objAdd LastChange
+                // entry
+                if (this.files.peek ().known) {
+                    (item as UpdatableObject).non_overriding_commit.begin ();
+                } else {
+                    var container = item.parent as TrackableContainer;
+                    container.add_child_tracked.begin (item) ;
+                }
             }
+        } catch (Error error) {
+            warning (/*_*/"Failed to extract meta-data for file %s",
+                     error.message);
         }
 
         this.files.poll ();
@@ -324,9 +346,11 @@ public class Rygel.MediaExport.HarvestingTask : Rygel.StateMachine,
         // failed; there's not much to do here, just print the information and
         // go to the next file
 
-        debug ("Skipping %s; extraction completely failed: %s",
+        warning (_("Skipping URI %s; extraction completely failed: %s"),
                file.get_uri (),
                error.message);
+
+        this.cache.blacklist (file);
 
         this.files.poll ();
         this.do_update ();

@@ -11,18 +11,18 @@
  * This file is part of Rygel.
  *
  * Rygel is free software; you can redistribute it and/or modify
- * it under the terms of the GNU Lesser General Public License as published by
- * the Free Software Foundation; either version 2 of the License, or
- * (at your option) any later version.
+ * it under the terms of the GNU Lesser General Public
+ * License as published by the Free Software Foundation; either
+ * version 2.1 of the License, or (at your option) any later version.
  *
  * Rygel is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU Lesser General Public License for more details.
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ * Lesser General Public License for more details.
  *
- * You should have received a copy of the GNU Lesser General Public License
- * along with this program; if not, write to the Free Software Foundation,
- * Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
+ * You should have received a copy of the GNU Lesser General Public
+ * License along with this library; if not, write to the Free Software
+ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
 using Gee;
@@ -71,25 +71,6 @@ public class Rygel.MetaConfig : GLib.Object, Configuration {
         if (meta_config != null) {
             meta_config.connect_signals (config);
         }
-    }
-
-    public bool get_upnp_enabled () throws GLib.Error {
-        bool val = true;
-        bool unavailable = true;
-
-        foreach (var config in MetaConfig.configs) {
-            try {
-                val = config.get_upnp_enabled ();
-                unavailable = false;
-                break;
-            } catch (GLib.Error err) {}
-        }
-
-        if (unavailable) {
-            throw new ConfigurationError.NO_VALUE_SET (_("No value available"));
-        }
-
-        return val;
     }
 
     public string get_interface () throws GLib.Error {
@@ -283,8 +264,8 @@ public class Rygel.MetaConfig : GLib.Object, Configuration {
         return val;
     }
 
-    public string get_video_upload_folder () throws GLib.Error {
-        unowned string default = Environment.get_user_special_dir
+    public string? get_video_upload_folder () throws GLib.Error {
+        unowned string? default = Environment.get_user_special_dir
                                         (UserDirectory.VIDEOS);
         var value = default;
 
@@ -294,11 +275,15 @@ public class Rygel.MetaConfig : GLib.Object, Configuration {
             } catch (GLib.Error err) { }
         }
 
-        return value.replace ("@VIDEOS@", default);
+        if (value != null && default != null) {
+            return value.replace ("@VIDEOS@", default);
+        }
+
+        return null;
     }
 
-    public string get_music_upload_folder () throws GLib.Error {
-        unowned string default = Environment.get_user_special_dir
+    public string? get_music_upload_folder () throws GLib.Error {
+        unowned string? default = Environment.get_user_special_dir
                                         (UserDirectory.MUSIC);
 
         var value = default;
@@ -309,11 +294,15 @@ public class Rygel.MetaConfig : GLib.Object, Configuration {
             } catch (GLib.Error err) {};
         }
 
-        return value.replace ("@MUSIC@", default);
+        if (value != null && default != null) {
+            return value.replace ("@MUSIC@", default);
+        }
+
+        return null;
     }
 
-    public string get_picture_upload_folder () throws GLib.Error {
-        unowned string default = Environment.get_user_special_dir
+    public string? get_picture_upload_folder () throws GLib.Error {
+        unowned string? default = Environment.get_user_special_dir
                                         (UserDirectory.PICTURES);
         var value = default;
 
@@ -323,9 +312,12 @@ public class Rygel.MetaConfig : GLib.Object, Configuration {
             } catch (GLib.Error err) {};
         }
 
-        return value.replace ("@PICTURES@", default);
-    }
+        if (value != null && default != null) {
+            return value.replace ("@PICTURES@", default);
+        }
 
+        return null;
+    }
 
     public bool get_enabled (string section) throws GLib.Error {
         bool val = true;
@@ -486,10 +478,6 @@ public class Rygel.MetaConfig : GLib.Object, Configuration {
                                                 ConfigurationEntry entry) {
         try {
             switch (entry) {
-            case ConfigurationEntry.UPNP_ENABLED:
-                config.get_upnp_enabled ();
-                break;
-
             case ConfigurationEntry.INTERFACE:
                 config.get_interfaces ();
                 break;

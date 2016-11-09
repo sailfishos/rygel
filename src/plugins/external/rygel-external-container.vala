@@ -8,18 +8,18 @@
  * This file is part of Rygel.
  *
  * Rygel is free software; you can redistribute it and/or modify
- * it under the terms of the GNU Lesser General Public License as published by
- * the Free Software Foundation; either version 2 of the License, or
- * (at your option) any later version.
+ * it under the terms of the GNU Lesser General Public
+ * License as published by the Free Software Foundation; either
+ * version 2.1 of the License, or (at your option) any later version.
  *
  * Rygel is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU Lesser General Public License for more details.
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ * Lesser General Public License for more details.
  *
- * You should have received a copy of the GNU Lesser General Public License
- * along with this program; if not, write to the Free Software Foundation,
- * Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
+ * You should have received a copy of the GNU Lesser General Public
+ * License along with this library; if not, write to the Free Software
+ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
 using GUPnP;
@@ -48,7 +48,11 @@ public class Rygel.External.Container : Rygel.MediaContainer,
                       string     service_name,
                       string     path,
                       Container? parent = null) throws IOError {
-        base (id, parent, title, (int) child_count.clamp (0, int.MAX));
+        var tmp = (int) child_count.clamp (0, int.MAX);
+        if (tmp == int.MAX) {
+            tmp = -1;
+        }
+        base (id, parent, title, tmp);
 
         this.service_name = service_name;
         this.item_factory = new ItemFactory ();
@@ -331,7 +335,10 @@ public class Rygel.External.Container : Rygel.MediaContainer,
                                          DBusProxyFlags.DO_NOT_LOAD_PROPERTIES);
             var props = yield props_iface.get_all (MediaContainerProxy.IFACE);
             var child_count = (uint) props.lookup ("ChildCount");
-            this.child_count = (int) child_count;
+            // Check if peer knows its child count
+            if (child_count < int.MAX) {
+                this.child_count = (int) child_count;
+            }
             props = yield props_iface.get_all (MediaObjectProxy.IFACE);
 
             this.title = get_mandatory_string_value (props,

@@ -11,18 +11,18 @@
  * This file is part of Rygel.
  *
  * Rygel is free software; you can redistribute it and/or modify
- * it under the terms of the GNU Lesser General Public License as published by
- * the Free Software Foundation; either version 2 of the License, or
- * (at your option) any later version.
+ * it under the terms of the GNU Lesser General Public
+ * License as published by the Free Software Foundation; either
+ * version 2.1 of the License, or (at your option) any later version.
  *
  * Rygel is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU Lesser General Public License for more details.
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ * Lesser General Public License for more details.
  *
- * You should have received a copy of the GNU Lesser General Public License
- * along with this program; if not, write to the Free Software Foundation,
- * Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
+ * You should have received a copy of the GNU Lesser General Public
+ * License along with this library; if not, write to the Free Software
+ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
 using Gst;
@@ -38,7 +38,7 @@ public errordomain Rygel.GstTranscoderError {
  * Each implementation derives from it and must
  * implement get_resources_for_item and get_encoding_profile methods.
  */
-public abstract class Rygel.GstTranscoder : GLib.Object {
+internal abstract class Rygel.GstTranscoder : GLib.Object {
     public string name { get; construct; }
     public string mime_type { get; construct; }
     public string dlna_profile { get; construct; }
@@ -122,7 +122,7 @@ public abstract class Rygel.GstTranscoder : GLib.Object {
      *
      * @return      the new transcoding source
      */
-    public DataSource create_source (MediaFileItem item, DataSource src) throws Error {
+    public GstDataSource create_source (MediaFileItem item, DataSource src) throws Error {
         // We can only link GStreamer data sources together
         assert (src is GstDataSource);
 
@@ -150,14 +150,17 @@ public abstract class Rygel.GstTranscoder : GLib.Object {
         orig_source.src.link (decoder);
 
         decoder.pad_added.connect (this.on_decoder_pad_added);
-        decoder.autoplug_continue.connect (this.on_autoplug_continue);
         decoder.no_more_pads.connect (this.on_no_more_pads);
 
         var pad = encoder.get_static_pad ("src");
         var ghost = new GhostPad (null, pad);
         bin.add_pad (ghost);
 
-        return new GstDataSource.from_element (bin);
+        // Hook up resource from original resource
+        var new_source = new GstDataSource.from_element (bin);
+        new_source.res = orig_source.res;
+
+        return new_source;
     }
 
     /**
@@ -166,19 +169,6 @@ public abstract class Rygel.GstTranscoder : GLib.Object {
      * @return      the Gst.EncodingProfile for this transcoder.
      */
     protected abstract EncodingProfile get_encoding_profile ();
-
-    private bool on_autoplug_continue (Element decodebin,
-                                       Pad     new_pad,
-                                       Caps    caps) {
-        Gst.Pad sinkpad = null;
-
-        Signal.emit_by_name (this.encoder, "request-pad", caps, out sinkpad);
-        if (sinkpad == null) {
-            return true;
-        }
-
-        return false;
-    }
 
     private void on_decoder_pad_added (Element decodebin, Pad new_pad) {
         Gst.Pad sinkpad;
@@ -227,4 +217,17 @@ public abstract class Rygel.GstTranscoder : GLib.Object {
             bus.post (message);
         }
     }
+
+    public bool transcoding_necessary (MediaFileItem item) {
+        return !(this.mime_type_is_a (this.mime_type, item.mime_type) &&
+                 this.dlna_profile == item.dlna_profile);
+    }
+
+    protected bool mime_type_is_a (string mime_type1, string mime_type2) {
+        string content_type1 = ContentType.get_mime_type (mime_type1);
+        string content_type2 = ContentType.get_mime_type (mime_type2);
+
+        return ContentType.is_a (content_type1, content_type2);
+    }
+
 }

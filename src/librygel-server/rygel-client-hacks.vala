@@ -7,18 +7,18 @@
  * This file is part of Rygel.
  *
  * Rygel is free software; you can redistribute it and/or modify
- * it under the terms of the GNU Lesser General Public License as published by
- * the Free Software Foundation; either version 2 of the License, or
- * (at your option) any later version.
+ * it under the terms of the GNU Lesser General Public
+ * License as published by the Free Software Foundation; either
+ * version 2.1 of the License, or (at your option) any later version.
  *
  * Rygel is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU Lesser General Public License for more details.
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ * Lesser General Public License for more details.
  *
- * You should have received a copy of the GNU Lesser General Public License
- * along with this program; if not, write to the Free Software Foundation,
- * Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
+ * You should have received a copy of the GNU Lesser General Public
+ * License along with this library; if not, write to the Free Software
+ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
 using Gee;
@@ -83,12 +83,21 @@ internal abstract class Rygel.ClientHacks : GLib.Object {
             return new LGTVHacks (message);
         } catch (Error error) { }
 
+        try {
+            return new PhillipsHacks (message);
+        } catch (Error error) { }
+
         return new XBMCHacks (message);
     }
 
     public virtual void translate_container_id (MediaQueryAction action,
                                                 ref string       container_id) {}
 
+    /**
+     * Modify the passed media object.
+     *
+     * Called before serializing the Object to DIDL-Lite.
+     */
     public virtual void apply (MediaObject object) {}
 
     public virtual void filter_sort_criteria (ref string sort_criteria) {}

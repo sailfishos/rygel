@@ -6,13 +6,18 @@
  * This file is part of Rygel.
  *
  * Rygel is free software; you can redistribute it and/or modify
- * it under the terms of the GNU Lesser General Public License as published by
- * the Free Software Foundation; either version 2 of the License, or
- * (at your option) any later version.
+ * it under the terms of the GNU Lesser General Public
+ * License as published by the Free Software Foundation; either
+ * version 2.1 of the License, or (at your option) any later version.
  *
- * You should have received a copy of the GNU Lesser General Public License
- * along with this program; if not, write to the Free Software Foundation,
- * Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
+ * Rygel is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ * Lesser General Public License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public
+ * License along with this library; if not, write to the Free Software
+ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
 using GUPnP;
@@ -69,7 +74,7 @@ public class Rygel.MediaResource : GLib.Object {
         this.name = name;
         // res block
         this.uri = that.uri;
-        this.import_uri = that.uri;
+        this.import_uri = that.import_uri;
         this.extension = that.extension;
         this.size = that.size;
         this.cleartext_size = that.cleartext_size;
@@ -136,10 +141,19 @@ public class Rygel.MediaResource : GLib.Object {
                                       HashTable<string, string>? replacements) {
         // Note: For a DIDLLiteResource, a values -1/null also signal "not set"
         if (replacements == null) {
-            didl_resource.uri = this.uri;
+            if (this.import_uri != null) {
+                didl_resource.import_uri = this.import_uri;
+            } else {
+                didl_resource.uri = this.uri;
+            }
         } else {
-            didl_resource.uri = MediaObject.apply_replacements (replacements,
-                                                                this.uri);
+            if (this.import_uri != null) {
+                didl_resource.import_uri = MediaObject.apply_replacements
+                    (replacements, this.import_uri);
+            } else {
+                didl_resource.uri = MediaObject.apply_replacements (replacements,
+                                                                    this.uri);
+            }
         }
         didl_resource.size64 = this.size;
         didl_resource.cleartext_size = this.cleartext_size;

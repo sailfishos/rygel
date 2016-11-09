@@ -6,13 +6,18 @@
  * This file is part of Rygel.
  *
  * Rygel is free software; you can redistribute it and/or modify
- * it under the terms of the GNU Lesser General Public License as published by
- * the Free Software Foundation; either version 2 of the License, or
- * (at your option) any later version.
+ * it under the terms of the GNU Lesser General Public
+ * License as published by the Free Software Foundation; either
+ * version 2.1 of the License, or (at your option) any later version.
  *
- * You should have received a copy of the GNU Lesser General Public License
- * along with this program; if not, write to the Free Software Foundation,
- * Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
+ * Rygel is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ * Lesser General Public License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public
+ * License along with this library; if not, write to the Free Software
+ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
 using GUPnP;
@@ -56,7 +61,7 @@ internal class Rygel.HTTPMediaResourceHandler : HTTPGetHandler {
         var protocol_info = media_resource.get_protocol_info (replacements);
         if (protocol_info != null) {
             var pi_fields = protocol_info.to_string ().split (":", 4);
-            if (pi_fields[3] != null) {
+            if (pi_fields != null && pi_fields[3] != null) {
                 request.msg.response_headers.append ("contentFeatures.dlna.org",
                                                      pi_fields[3]);
             }

@@ -11,18 +11,18 @@
  * This file is part of Rygel.
  *
  * Rygel is free software; you can redistribute it and/or modify
- * it under the terms of the GNU Lesser General Public License as published by
- * the Free Software Foundation; either version 2 of the License, or
- * (at your option) any later version.
+ * it under the terms of the GNU Lesser General Public
+ * License as published by the Free Software Foundation; either
+ * version 2.1 of the License, or (at your option) any later version.
  *
  * Rygel is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU Lesser General Public License for more details.
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ * Lesser General Public License for more details.
  *
- * You should have received a copy of the GNU Lesser General Public License
- * along with this program; if not, write to the Free Software Foundation,
- * Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
+ * You should have received a copy of the GNU Lesser General Public
+ * License along with this library; if not, write to the Free Software
+ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
 using Gee;
@@ -37,30 +37,32 @@ private enum Rygel.EntryType {
  * Manages the user configuration for Rygel.
  */
 public class Rygel.UserConfig : GLib.Object, Configuration {
-    public static const string GENERAL_SECTION = "general";
-    public static const string CONFIG_FILE = "rygel.conf";
-    public static const string IFACE_KEY = "interface";
-    public static const string PORT_KEY = "port";
-    public static const string ENABLED_KEY = "enabled";
-    public static const string UPNP_ENABLED_KEY = "upnp-" + ENABLED_KEY;
-    public static const string TITLE_KEY = "title";
-    public static const string TRANSCODING_KEY = "enable-transcoding";
-    public static const string ALLOW_UPLOAD_KEY = "allow-upload";
-    public static const string ALLOW_DELETION_KEY = "allow-deletion";
-    public static const string LOG_LEVELS_KEY = "log-level";
-    public static const string PLUGIN_PATH_KEY = "plugin-path";
-    public static const string ENGINE_PATH_KEY = "engine-path";
-    public static const string MEDIA_ENGINE_KEY = "media-engine";
-    public static const string UPLOAD_FOLDER_KEY = "upload-folder";
-    public static const string VIDEO_UPLOAD_DIR_PATH_KEY =
+    public const string GENERAL_SECTION = "general";
+    public const string CONFIG_FILE = "rygel.conf";
+    public const string IFACE_KEY = "interface";
+    public const string PORT_KEY = "port";
+    public const string ENABLED_KEY = "enabled";
+    public const string TITLE_KEY = "title";
+    public const string TRANSCODING_KEY = "enable-transcoding";
+    public const string ALLOW_UPLOAD_KEY = "allow-upload";
+    public const string ALLOW_DELETION_KEY = "allow-deletion";
+    public const string LOG_LEVELS_KEY = "log-level";
+    public const string PLUGIN_PATH_KEY = "plugin-path";
+    public const string ENGINE_PATH_KEY = "engine-path";
+    public const string MEDIA_ENGINE_KEY = "media-engine";
+    public const string UPLOAD_FOLDER_KEY = "upload-folder";
+    public const string VIDEO_UPLOAD_DIR_PATH_KEY =
                                         "video-" + UPLOAD_FOLDER_KEY;
-    public static const string MUSIC_UPLOAD_DIR_PATH_KEY =
+    public const string MUSIC_UPLOAD_DIR_PATH_KEY =
                                         "music-" + UPLOAD_FOLDER_KEY;
-    public static const string PICTURE_UPLOAD_DIR_PATH_KEY =
+    public const string PICTURE_UPLOAD_DIR_PATH_KEY =
                                         "picture-" + UPLOAD_FOLDER_KEY;
 
     // Our singleton
     private static UserConfig config;
+
+    private uint system_config_timer_id = 0;
+    private uint local_config_timer_id = 0;
 
     private class ConfigPair {
         public ConfigurationEntry entry;
@@ -105,10 +107,6 @@ public class Rygel.UserConfig : GLib.Object, Configuration {
         general_config_keys.set (PORT_KEY,
                                  new ConfigPair (ConfigurationEntry.PORT,
                                                  EntryType.INT));
-        general_config_keys.set (UPNP_ENABLED_KEY,
-                                 new ConfigPair
-                                        (ConfigurationEntry.UPNP_ENABLED,
-                                         EntryType.BOOL));
         general_config_keys.set (TRANSCODING_KEY,
                                  new ConfigPair (ConfigurationEntry.TRANSCODING,
                                                  EntryType.BOOL));
@@ -147,10 +145,6 @@ public class Rygel.UserConfig : GLib.Object, Configuration {
         section_keys.set (TITLE_KEY,
                           new SectionPair (SectionEntry.TITLE,
                                            EntryType.STRING));
-    }
-
-    public bool get_upnp_enabled () throws GLib.Error {
-        return this.get_bool (GENERAL_SECTION, UPNP_ENABLED_KEY);
     }
 
     [CCode (array_length=false, array_null_terminated = true)]
@@ -201,15 +195,15 @@ public class Rygel.UserConfig : GLib.Object, Configuration {
         return this.get_string (GENERAL_SECTION, MEDIA_ENGINE_KEY);
     }
 
-    public string get_video_upload_folder () throws GLib.Error {
+    public string? get_video_upload_folder () throws GLib.Error {
         return this.get_string (GENERAL_SECTION, VIDEO_UPLOAD_DIR_PATH_KEY);
     }
 
-    public string get_music_upload_folder () throws GLib.Error {
+    public string? get_music_upload_folder () throws GLib.Error {
         return this.get_string (GENERAL_SECTION, MUSIC_UPLOAD_DIR_PATH_KEY);
     }
 
-    public string get_picture_upload_folder () throws GLib.Error {
+    public string? get_picture_upload_folder () throws GLib.Error {
         return this.get_string (GENERAL_SECTION, PICTURE_UPLOAD_DIR_PATH_KEY);
     }
 
@@ -733,7 +727,6 @@ public class Rygel.UserConfig : GLib.Object, Configuration {
             sys_key_file.load_from_file (system.get_path (),
                                          KeyFileFlags.KEEP_COMMENTS |
                                          KeyFileFlags.KEEP_TRANSLATIONS);
-
         } catch (GLib.Error e) {}
 
         this.compare_and_notify (this.key_file, sys_key_file);
@@ -746,7 +739,6 @@ public class Rygel.UserConfig : GLib.Object, Configuration {
             key_file.load_from_file (local.get_path (),
                                      KeyFileFlags.KEEP_COMMENTS |
                                      KeyFileFlags.KEEP_TRANSLATIONS);
-
         } catch (GLib.Error e) {}
 
         this.compare_and_notify (key_file, this.sys_key_file);
@@ -756,13 +748,30 @@ public class Rygel.UserConfig : GLib.Object, Configuration {
                                            File file,
                                            File? other_file,
                                            FileMonitorEvent event_type) {
-        this.reload_compare_and_notify_system (file);
+        if (this.system_config_timer_id != 0) {
+            Source.remove (this.system_config_timer_id);
+        }
+        this.system_config_timer_id = Timeout.add (500, () => {
+            this.system_config_timer_id = 0;
+            this.reload_compare_and_notify_system (file);
+
+            return false;
+        });
     }
 
     private void on_local_config_changed (FileMonitor monitor,
                                           File file,
                                           File? other_file,
                                           FileMonitorEvent event_type) {
-        this.reload_compare_and_notify_local (file);
+        if (this.local_config_timer_id != 0) {
+            Source.remove (this.local_config_timer_id);
+        }
+
+        this.local_config_timer_id = Timeout.add (500, () => {
+            this.local_config_timer_id = 0;
+            this.reload_compare_and_notify_local (file);
+
+            return false;
+        });
     }
 }

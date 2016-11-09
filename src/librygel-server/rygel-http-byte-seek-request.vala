@@ -11,18 +11,18 @@
  * This file is part of Rygel.
  *
  * Rygel is free software; you can redistribute it and/or modify
- * it under the terms of the GNU Lesser General Public License as published by
- * the Free Software Foundation; either version 2 of the License, or
- * (at your option) any later version.
+ * it under the terms of the GNU Lesser General Public
+ * License as published by the Free Software Foundation; either
+ * version 2.1 of the License, or (at your option) any later version.
  *
  * Rygel is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU Lesser General Public License for more details.
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ * Lesser General Public License for more details.
  *
- * You should have received a copy of the GNU Lesser General Public License
- * along with this program; if not, write to the Free Software Foundation,
- * Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
+ * You should have received a copy of the GNU Lesser General Public
+ * License along with this library; if not, write to the Free Software
+ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
 using GUPnP;
@@ -49,10 +49,12 @@ public class Rygel.HTTPByteSeekRequest : Rygel.HTTPSeekRequest {
     public int64 total_size { get; set; }
 
 
-    public HTTPByteSeekRequest (HTTPGet request) throws HTTPSeekRequestError,
-                                                 HTTPRequestError {
+    public HTTPByteSeekRequest (Soup.Message msg,
+                                Rygel.HTTPGetHandler handler)
+                               throws HTTPSeekRequestError,
+                                      HTTPRequestError {
         base ();
-        unowned string range = request.msg.request_headers.get_one ("Range");
+        unowned string range = msg.request_headers.get_one ("Range");
         if (range == null) {
             throw new HTTPSeekRequestError.INVALID_RANGE ("Range header not present");
         }
@@ -61,7 +63,7 @@ public class Rygel.HTTPByteSeekRequest : Rygel.HTTPSeekRequest {
 
         // The size (entity body size) may not be known up-front (especially
         // for live sources)
-        total_size = request.handler.get_resource_size ();
+        total_size = handler.get_resource_size ();
         if (total_size < 0) {
             total_size = UNSPECIFIED;
         }
@@ -72,8 +74,8 @@ public class Rygel.HTTPByteSeekRequest : Rygel.HTTPSeekRequest {
         //       legality varies based on the context (e.g. DLNA 7.5.4.3.2.19.2,
         //       7.5.4.3.2.20.1, 7.5.4.3.2.20.3)
         if (!range.has_prefix ("bytes=")) {
-            var msg = ("Invalid Range value (missing 'bytes=' field): '%s'");
-            throw new HTTPSeekRequestError.INVALID_RANGE (msg, range);
+            var message = ("Invalid Range value (missing 'bytes=' field): '%s'");
+            throw new HTTPSeekRequestError.INVALID_RANGE (message, range);
         }
 
         var parsed_range = range.substring (6);
@@ -91,18 +93,19 @@ public class Rygel.HTTPByteSeekRequest : Rygel.HTTPSeekRequest {
         }
 
         if ((total_size != UNSPECIFIED) && (start_byte >= total_size)) {
-            var msg = /*_*/("Range start value %lld is larger than content size %lld: '%s'");
-            throw new HTTPSeekRequestError.OUT_OF_RANGE (msg,
+            var message = /*_*/("Range start value %lld is larger than content size %lld: '%s'");
+            throw new HTTPSeekRequestError.OUT_OF_RANGE (message,
                                                          start_byte,
                                                          total_size,
                                                          range);
         }
 
         if (range_tokens[1] == null || (range_tokens[1].length == 0)) {
-            end_byte = total_size;
             if (total_size != UNSPECIFIED) {
+                end_byte = total_size - 1;
                 range_length = end_byte - start_byte + 1; // range is inclusive
             } else {
+                end_byte = UNSPECIFIED;
                 range_length = UNSPECIFIED;
             }
         } else {
@@ -112,8 +115,8 @@ public class Rygel.HTTPByteSeekRequest : Rygel.HTTPSeekRequest {
                                        ("Invalid Range end value: '%s'", range);
             }
             if (end_byte < start_byte) {
-                var msg = /*_*/("Range end value %lld is smaller than range start value %lld: '%s'");
-                throw new HTTPSeekRequestError.INVALID_RANGE (msg,
+                var message = /*_*/("Range end value %lld is smaller than range start value %lld: '%s'");
+                throw new HTTPSeekRequestError.INVALID_RANGE (message,
                                                               end_byte,
                                                               start_byte,
                                                               range);
@@ -128,19 +131,20 @@ public class Rygel.HTTPByteSeekRequest : Rygel.HTTPSeekRequest {
         this.total_size = total_size;
     }
 
-    public static bool supported (HTTPGet request) {
+    public static bool supported (Soup.Message         message,
+                                  Rygel.HTTPGetHandler handler) {
         bool force_seek = false;
 
         try {
-            var hack = ClientHacks.create (request.msg);
+            var hack = ClientHacks.create (message);
             force_seek = hack.force_seek ();
         } catch (Error error) { }
 
-        return force_seek || request.handler.supports_byte_seek ();
+        return force_seek || handler.supports_byte_seek ();
     }
 
-    public static bool requested (HTTPGet request) {
-        return (request.msg.request_headers.get_one ("Range") != null);
+    public static bool requested (Soup.Message msg) {
+        return (msg.request_headers.get_one ("Range") != null);
     }
 
     // Leading "0"s cause try_parse() to assume the value is octal (see Vala

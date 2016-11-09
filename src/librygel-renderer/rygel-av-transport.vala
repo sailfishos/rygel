@@ -12,18 +12,18 @@
  *         Sivakumar Mani <siva@orexel.com>
  *
  * Rygel is free software; you can redistribute it and/or modify
- * it under the terms of the GNU Lesser General Public License as published by
- * the Free Software Foundation; either version 2 of the License, or
- * (at your option) any later version.
+ * it under the terms of the GNU Lesser General Public
+ * License as published by the Free Software Foundation; either
+ * version 2.1 of the License, or (at your option) any later version.
  *
  * Rygel is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU Lesser General Public License for more details.
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ * Lesser General Public License for more details.
  *
- * You should have received a copy of the GNU Lesser General Public License
- * along with this program; if not, write to the Free Software Foundation,
- * Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
+ * You should have received a copy of the GNU Lesser General Public
+ * License along with this library; if not, write to the Free Software
+ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
 using GUPnP;
@@ -134,7 +134,15 @@ internal class Rygel.AVTransport : Service {
 
         this.player.notify["duration"].connect (this.notify_duration_cb);
 
-        this.session = new Session ();
+        // Work-around for missing default values on properties in interfaces,
+        // see bgo#702774
+        if (this.player.user_agent == null) {
+            this.player.user_agent = "Rygel/%s DLNADOC/1.50 UPnP/1.0".printf
+                                        (BuildConfig.PACKAGE_VERSION);
+        }
+
+        this.session = new Session.with_options (Soup.SESSION_USER_AGENT,
+                                                 this.player.user_agent);
 
         this.protocol_info = plugin.get_protocol_info ();
     }
@@ -487,7 +495,7 @@ internal class Rygel.AVTransport : Service {
             return;
         }
 
-        if (this.controller.playback_state != "PLAYING") {
+        if (!this.controller.can_pause) {
             action.return_error (701, _("Transition not available"));
 
             return;
@@ -687,7 +695,7 @@ internal class Rygel.AVTransport : Service {
 
     private void notify_meta_data_cb (Object player, ParamSpec p) {
         this.changelog.log ("AVTransportURIMetaData",
-                            Markup.escape_text (this.controller.metadata));
+                            this.controller.metadata);
     }
 
     private void notify_track_uri_cb (Object player, ParamSpec p) {
@@ -696,7 +704,7 @@ internal class Rygel.AVTransport : Service {
 
     private void notify_track_meta_data_cb (Object player, ParamSpec p) {
         this.changelog.log ("CurrentTrackMetaData",
-                            Markup.escape_text (this.controller.track_metadata));
+                            this.controller.track_metadata);
     }
 
     private void notify_next_uri_cb (Object controller, ParamSpec p) {
@@ -705,11 +713,11 @@ internal class Rygel.AVTransport : Service {
 
     private void notify_next_meta_data_cb (Object player, ParamSpec p) {
         this.changelog.log ("NextAVTransportURIMetaData",
-                            Markup.escape_text (this.controller.next_metadata));
+                            this.controller.next_metadata);
     }
 
     private void notify_play_mode_cb (Object player, ParamSpec p) {
-	this.changelog.log ("CurrentPlayMode", this.controller.play_mode);
+        this.changelog.log ("CurrentPlayMode", this.controller.play_mode);
     }
 
     private async void handle_playlist (ServiceAction action,

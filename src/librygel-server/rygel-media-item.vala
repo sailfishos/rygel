@@ -12,18 +12,18 @@
  * This file is part of Rygel.
  *
  * Rygel is free software; you can redistribute it and/or modify
- * it under the terms of the GNU Lesser General Public License as published by
- * the Free Software Foundation; either version 2 of the License, or
- * (at your option) any later version.
+ * it under the terms of the GNU Lesser General Public
+ * License as published by the Free Software Foundation; either
+ * version 2.1 of the License, or (at your option) any later version.
  *
  * Rygel is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU Lesser General Public License for more details.
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ * Lesser General Public License for more details.
  *
- * You should have received a copy of the GNU Lesser General Public License
- * along with this program; if not, write to the Free Software Foundation,
- * Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
+ * You should have received a copy of the GNU Lesser General Public
+ * License along with this library; if not, write to the Free Software
+ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
 using GUPnP;
@@ -38,6 +38,7 @@ private errordomain Rygel.MediaItemError {
  * MediaItems must live in a container and may not contain other MediaItems
  */
 public abstract class Rygel.MediaItem : MediaObject {
+    public const string UPNP_CLASS = "objec.item";
 
     public string description { get; set; default = null; }
 
@@ -103,17 +104,5 @@ public abstract class Rygel.MediaItem : MediaObject {
         }
 
         return didl_item;
-    }
-
-    protected virtual ProtocolInfo get_protocol_info (string? uri,
-                                                      string  protocol) {
-        var protocol_info = new ProtocolInfo ();
-
-        protocol_info.protocol = protocol;
-        protocol_info.dlna_flags = DLNAFlags.DLNA_V15 |
-                                   DLNAFlags.CONNECTION_STALL |
-                                   DLNAFlags.BACKGROUND_TRANSFER_MODE;
-
-        return protocol_info;
     }
 }

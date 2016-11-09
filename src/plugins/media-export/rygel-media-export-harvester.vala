@@ -4,18 +4,18 @@
  * This file is part of Rygel.
  *
  * Rygel is free software; you can redistribute it and/or modify
- * it under the terms of the GNU Lesser General Public License as published by
- * the Free Software Foundation; either version 2 of the License, or
- * (at your option) any later version.
+ * it under the terms of the GNU Lesser General Public
+ * License as published by the Free Software Foundation; either
+ * version 2.1 of the License, or (at your option) any later version.
  *
  * Rygel is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU Lesser General Public License for more details.
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ * Lesser General Public License for more details.
  *
- * You should have received a copy of the GNU Lesser General Public License
- * along with this program; if not, write to the Free Software Foundation,
- * Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
+ * You should have received a copy of the GNU Lesser General Public
+ * License along with this library; if not, write to the Free Software
+ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
  */
 using Gee;
 
@@ -66,14 +66,25 @@ internal class Rygel.MediaExport.Harvester : GLib.Object {
      * @param info a FileInfo
      * @return true if file should be extracted, false otherwise
      */
-    public static bool is_eligible (FileInfo info) {
-        return info.get_content_type ().has_prefix ("image/") ||
-               info.get_content_type ().has_prefix ("video/") ||
-               info.get_content_type ().has_prefix ("audio/") ||
-               info.get_content_type () == "application/ogg" ||
-               info.get_content_type () == "application/xml" ||
-               info.get_content_type () == "text/xml" ||
-               info.get_content_type () == "text/plain";
+    public static bool is_eligible (File file, FileInfo info) {
+        var is_supported_content_type =
+            info.get_content_type ().has_prefix ("image/") ||
+            info.get_content_type ().has_prefix ("video/") ||
+            info.get_content_type ().has_prefix ("audio/") ||
+            info.get_content_type () == "application/ogg" ||
+            info.get_content_type () == "application/xml" ||
+            info.get_content_type () == "text/xml" ||
+            info.get_content_type () == "text/plain" ||
+            info.get_content_type () == "application/x-cd-image";
+        var cache = MediaCache.get_default ();
+        var is_blacklisted = cache.is_blacklisted (file);
+
+        if (is_blacklisted) {
+            debug ("URI %s is not eligble due to blacklising",
+                   file.get_uri ());
+        }
+
+        return is_supported_content_type && ! is_blacklisted;
     }
 
     /**
@@ -181,13 +192,13 @@ internal class Rygel.MediaExport.Harvester : GLib.Object {
                                         FileQueryInfoFlags.NONE,
                                         this.cancellable);
             if (info.get_file_type () == FileType.DIRECTORY ||
-                Harvester.is_eligible (info)) {
+                Harvester.is_eligible (file, info)) {
                 var id = MediaCache.get_id (file.get_parent ());
                 try {
                     var parent_container = cache.get_object (id)
                                         as MediaContainer;
                     this.schedule (file, parent_container);
-                } catch (DatabaseError error) {
+                } catch (Database.DatabaseError error) {
                     warning (_("Error fetching object '%s' from database: %s"),
                             id,
                             error.message);
