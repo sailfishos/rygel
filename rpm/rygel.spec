@@ -1,20 +1,19 @@
 Name:          rygel
-Version:       0.25.3
+Version:       0.32.1
 Release:       1%{?dist}
 Summary:       A collection of UPnP/DLNA services
 
 Group:         Applications/Multimedia
 License:       LGPLv2+
 URL:           http://live.gnome.org/Rygel
-Source0:       ftp://ftp.gnome.org/pub/GNOME/sources/%{name}/0.20/%{name}-%{version}.tar.xz
+Source0:       ftp://ftp.gnome.org/pub/GNOME/sources/%{name}/0.32/%{name}-%{version}.tar.xz
 
-BuildRequires: gnome-common
 BuildRequires: gobject-introspection-devel >= 1.36
-BuildRequires: dbus-glib-devel
 BuildRequires: desktop-file-utils
 #BuildRequires: pkgconfig(gstreamer-1.0)
 #BuildRequires: pkgconfig(gstreamer-plugins-base-1.0)
-BuildRequires: gupnp-devel
+BuildRequires: pkgconfig(systemd)
+BuildRequires: gupnp-devel >= 0.20.14
 BuildRequires: gupnp-av-devel
 BuildRequires: gupnp-dlna-devel
 BuildRequires: libgee-devel
@@ -24,7 +23,7 @@ BuildRequires: libuuid-devel
 BuildRequires: sqlite-devel
 BuildRequires: tracker-devel
 BuildRequires: pkgconfig(libmediaart-2.0)
-BuildRequires: intltool
+BuildRequires: gettext
 Obsoletes: rygel-gst-plugins
 
 %description
@@ -59,7 +58,7 @@ A plugin for rygel to use tracker to locate media on the local machine.
 %build
 echo -n %{version} > .version
 echo -n %{version} > .tarball-version
-%autogen release --enable-tracker-plugin --disable-silent-rules --with-media-engine=simple --disable-strict-valac
+%autogen release --enable-tracker-plugin --disable-silent-rules --with-media-engine=simple --disable-strict-valac --disable-lms-plugin
 
 make %{?_smp_mflags} V=1
 
@@ -101,6 +100,7 @@ rm -rf %{buildroot}/%{_datadir}/icons/hicolor/*/apps/rygel*
 %{_libdir}/girepository-1.0/RygelServer-2.6.typelib
 %{_datadir}/rygel/
 %{_datadir}/dbus-1/services/org.gnome.Rygel1.service
+%{_libdir}/systemd/user/rygel.service
 
 %files tracker
 %{_libdir}/rygel-2.6/plugins/librygel-tracker.so
