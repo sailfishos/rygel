@@ -8,18 +8,18 @@
  * This file is part of Rygel.
  *
  * Rygel is free software; you can redistribute it and/or modify
- * it under the terms of the GNU Lesser General Public License as published by
- * the Free Software Foundation; either version 2 of the License, or
- * (at your option) any later version.
+ * it under the terms of the GNU Lesser General Public
+ * License as published by the Free Software Foundation; either
+ * version 2.1 of the License, or (at your option) any later version.
  *
  * Rygel is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU Lesser General Public License for more details.
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ * Lesser General Public License for more details.
  *
- * You should have received a copy of the GNU Lesser General Public License
- * along with this program; if not, write to the Free Software Foundation,
- * Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
+ * You should have received a copy of the GNU Lesser General Public
+ * License along with this library; if not, write to the Free Software
+ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
 /**
@@ -40,19 +40,22 @@ internal class Rygel.SimpleDataSource : DataSource, Object {
     private Posix.off_t last_byte = 0;
     private bool frozen = false;
     private bool stop_thread = false;
+    private unowned ThreadPool<SimpleDataSource> pool;
 
-    public SimpleDataSource (string uri) {
+    public SimpleDataSource (ThreadPool<SimpleDataSource>? pool,
+                             string                        uri) {
         debug ("Creating new data source for %s", uri);
         this.uri = uri;
+        this.pool = pool;
     }
 
     ~SimpleDataSource () {
         this.stop ();
     }
 
-    public Gee.List<HTTPResponseElement> ? preroll (HTTPSeekRequest? seek_request,
-                                                    PlaySpeedRequest? playspeed_request)
-       throws Error {
+    public Gee.List<HTTPResponseElement>? preroll (HTTPSeekRequest? seek_request,
+                                                   PlaySpeedRequest? playspeed_request)
+                                                   throws Error {
         var response_list = new Gee.ArrayList<HTTPResponseElement> ();
 
         if (seek_request != null) {
@@ -65,7 +68,9 @@ internal class Rygel.SimpleDataSource : DataSource, Object {
             this.first_byte = (Posix.off_t) byte_seek.start_byte;
             this.last_byte = (Posix.off_t) (byte_seek.end_byte + 1);
             debug ("Processing byte seek request for bytes %lld-%lld of %s",
-                    byte_seek.start_byte, byte_seek.end_byte, this.uri);
+                    byte_seek.start_byte,
+                    byte_seek.end_byte,
+                    this.uri);
             var seek_response = new HTTPByteSeekResponse.from_request (byte_seek);
             // Response will just return what was in the request
             response_list.add (seek_response);
@@ -84,10 +89,12 @@ internal class Rygel.SimpleDataSource : DataSource, Object {
 
     public void start () throws Error {
         debug ("Starting data source for uri %s", this.uri);
-
-        // TODO: Convert to use a thread pool
-        this.thread = new Thread<void*> ("Rygel Serving thread",
-                                         this.thread_func);
+        if (this.pool != null) {
+            this.pool.add (this);
+        } else {
+            this.thread = new Thread<void*> ("Rygel Serving Thread",
+                                             this.thread_func);
+        }
     }
 
     public void freeze () {
@@ -120,7 +127,17 @@ internal class Rygel.SimpleDataSource : DataSource, Object {
         this.mutex.unlock ();
     }
 
+    internal static void pool_func (owned SimpleDataSource data) {
+        data.run ();
+    }
+
     private void* thread_func () {
+        this.run ();
+
+        return null;
+    }
+
+    private void run () {
         var file = File.new_for_commandline_arg (this.uri);
         debug ("Spawning new thread for streaming file %s", this.uri);
         int fd = -1;
@@ -193,7 +210,5 @@ internal class Rygel.SimpleDataSource : DataSource, Object {
 
         // Signal that we're done streaming
         Idle.add ( () => { this.done (); return false; });
-
-        return null;
     }
 }

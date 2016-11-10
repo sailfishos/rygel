@@ -5,18 +5,18 @@
  * Author: Jens Georg <jensg@openismus.com>
  *
  * Rygel is free software; you can redistribute it and/or modify
- * it under the terms of the GNU Lesser General Public License as published by
- * the Free Software Foundation; either version 2 of the License, or
- * (at your option) any later version.
+ * it under the terms of the GNU Lesser General Public
+ * License as published by the Free Software Foundation; either
+ * version 2.1 of the License, or (at your option) any later version.
  *
  * Rygel is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU Lesser General Public License for more details.
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ * Lesser General Public License for more details.
  *
- * You should have received a copy of the GNU Lesser General Public License
- * along with this program; if not, write to the Free Software Foundation,
- * Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
+ * You should have received a copy of the GNU Lesser General Public
+ * License along with this library; if not, write to the Free Software
+ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
 using Gee;
@@ -58,22 +58,6 @@ public class Rygel.Playbin.Renderer : Rygel.MediaRenderer {
 
             return_val_if_fail (false, null);
         }
-    }
-
-    /**
-     * Create a new instance of Renderer, wrapping an existing GstPlayBin
-     * instance.
-     *
-     * @param pipeline Instance of GstPlayBin to wrap.
-     * @param title Friendly name of the new UPnP renderer on the network.
-     */
-    [Deprecated (since="0.23.1")]
-    public Renderer.wrap (Gst.Element pipeline, string title) {
-        return_val_if_fail (pipeline != null, null);
-        return_val_if_fail (pipeline.get_type ().name() == "GstPlayBin", null);
-
-        Object (title: title,
-                player: new Player.wrap (pipeline));
     }
 
     /**

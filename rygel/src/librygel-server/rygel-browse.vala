@@ -8,18 +8,18 @@
  * This file is part of Rygel.
  *
  * Rygel is free software; you can redistribute it and/or modify
- * it under the terms of the GNU Lesser General Public License as published by
- * the Free Software Foundation; either version 2 of the License, or
- * (at your option) any later version.
+ * it under the terms of the GNU Lesser General Public
+ * License as published by the Free Software Foundation; either
+ * version 2.1 of the License, or (at your option) any later version.
  *
  * Rygel is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU Lesser General Public License for more details.
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ * Lesser General Public License for more details.
  *
- * You should have received a copy of the GNU Lesser General Public License
- * along with this program; if not, write to the Free Software Foundation,
- * Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
+ * You should have received a copy of the GNU Lesser General Public
+ * License along with this library; if not, write to the Free Software
+ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
 using GUPnP;
@@ -95,7 +95,7 @@ internal class Rygel.Browse: Rygel.MediaQueryAction {
         }
 
         var container = (MediaContainer) media_object;
-        if (container.child_count < int.MAX) {
+        if (-1 < container.child_count && container.child_count < int.MAX) {
             this.total_matches = container.child_count;
         } else {
             this.total_matches = 0;
@@ -106,12 +106,16 @@ internal class Rygel.Browse: Rygel.MediaQueryAction {
             this.requested_count = this.total_matches;
         }
 
-        debug ("Fetching %u children of container '%s' from index %u..",
+        var sort_criteria = this.sort_criteria ?? container.sort_criteria;
+
+        debug ("Fetching %u children of container '%s' from index %u " +
+               "with sort criteria %s",
                this.requested_count,
                this.object_id,
-               this.index);
-
-        var sort_criteria = this.sort_criteria ?? container.sort_criteria;
+               this.index,
+               this.sort_criteria == null
+                    ? "none, using default: %s".printf (container.sort_criteria)
+                    : this.sort_criteria);
 
         var children = yield container.get_children (this.index,
                                                      this.requested_count,

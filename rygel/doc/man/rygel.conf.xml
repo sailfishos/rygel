@@ -109,22 +109,10 @@ man(1), man(7), http://www.tldp.org/HOWTO/Man-Page/
     <variablelist>
       <varlistentry>
         <term>
-          <option>upnp-enabled</option>
-        </term>
-        <listitem>
-          <para>Enable/disable UPnP sharing of the media files. If set to
-            <userinput>false</userinput>, <application>&dhpackage;</application>  will
-            still offer HTTP proxy URLs for its media files but not actively
-            advertise them via UPnP.
-          </para>
-        </listitem>
-      </varlistentry>
-      <varlistentry>
-        <term>
           <option>interface=<replaceable>INTERFACE</replaceable></option>
         </term>
         <listitem>
-          <para>A list of  the network interfaces <application>&dhpackage;</application> listens on. May be an IP, an interface name or on Linux even the ESSID of a wireless network.</para>
+          <para>Semicolon separated list separated of the network interfaces <application>&dhpackage;</application> should listen on. May be an IP, an interface name or on Linux even the ESSID of a wireless network.</para>
         </listitem>
       </varlistentry>
       <varlistentry>
@@ -150,7 +138,7 @@ man(1), man(7), http://www.tldp.org/HOWTO/Man-Page/
           <option>log-level=<replaceable>DOMAIN</replaceable>:<replaceable>LEVEL</replaceable>[,<replaceable>DOMAIN</replaceable>:<replaceable>LEVEL</replaceable>,…]</option>
         </term>
         <listitem>
-          <para>Comma-separated list of <replaceable>DOMAIN</replaceable>:<replaceable>LEVEL</replaceable> pairs, allowing to set the log level individually for each domain, where <replaceable>DOMAIN</replaceable> is eiher <userinput>&quot;*&quot;</userinput>, &quot;<userinput>rygel</userinput>&quot; or the name of a plugin. Allowed log levels are 1=critical, 2=error, 3=warning, 4=message/info,
+          <para>Comma-separated list of <replaceable>DOMAIN</replaceable>:<replaceable>LEVEL</replaceable> pairs, allowing to set the log level individually for each domain, where <replaceable>DOMAIN</replaceable> is eiher <userinput>&quot;*&quot;</userinput>, &quot;<userinput>rygel</userinput>&quot; or the name of a plugin. Allowed log levels are 1=error, 2=critical, 3=warning, 4=message/info,
             5=debug.
           Note that on recent versions of GLib (&gt;= 2.36) it is required to set the environment variable <envar>G_MESSAGES_DEBUG</envar> to <userinput>all</userinput> to get any debug output.</para>
         </listitem>
@@ -233,8 +221,22 @@ man(1), man(7), http://www.tldp.org/HOWTO/Man-Page/
     </variablelist>
   </refsect1>
   <refsect1>
+    <title>Database settings</title>
+    <para>The settings in the <code>[Database]</code>section are for the database support library. </para>
+    <para><variablelist>
+        <varlistentry>
+          <term>
+            <option>debug</option>
+          </term>
+          <listitem>
+            <para>Set to <option>true</option> to show the SQL statements used.</para>
+          </listitem>
+        </varlistentry>
+      </variablelist></para>
+  </refsect1>
+  <refsect1>
     <title>GStreamer Media Engine settings</title>
-    <para>The settings in the <code>[GstMediaEngine]</code> section are specific to the Gstreamer media engine, which is the default media engine. See the media-engine setting. These following options are available for the <ulink url="http://gstreamer.freedesktop.org">GStreamer</ulink> media engine.</para>
+    <para>The settings in the <code>[GstMediaEngine]</code> section are specific to the GStreamer media engine, which is the default media engine. See the media-engine setting. These following options are available for the <ulink url="http://gstreamer.freedesktop.org">GStreamer</ulink> media engine.</para>
     <variablelist>
       <varlistentry>
         <term>
@@ -294,6 +296,14 @@ man(1), man(7), http://www.tldp.org/HOWTO/Man-Page/
           </para>
         </listitem>
       </varlistentry>
+      <varlistentry>
+        <term>
+          <option>server-name</option>
+        </term>
+        <listitem>
+          <para>A string that will be sent as the &quot;Server:&quot; header in a HTTP response.</para>
+        </listitem>
+      </varlistentry>
     </variablelist>
   </refsect1>
   <refsect1>
@@ -305,7 +315,7 @@ man(1), man(7), http://www.tldp.org/HOWTO/Man-Page/
           <option>mode-on-suspend</option>
         </term>
         <listitem>
-          <para>The <code>NetworkInterfaceMode</code> that should be used when suspended. Default is "Unimplemented", other valid values are "IP-up-Periodic”, "IP-down-no-Wake", "IP-down-with-WakeOn", "IP-down-with-WakeAuto", "IP-down-with-WakeOnAuto".</para>
+          <para>The <code>NetworkInterfaceMode</code> that should be used when suspended. Default is &quot;Unimplemented&quot;, other valid values are &quot;IP-up-Periodic”, &quot;IP-down-no-Wake&quot;, &quot;IP-down-with-WakeOn&quot;, &quot;IP-down-with-WakeAuto&quot;, &quot;IP-down-with-WakeOnAuto&quot;.</para>
         </listitem>
       </varlistentry>
       <varlistentry>
@@ -313,7 +323,7 @@ man(1), man(7), http://www.tldp.org/HOWTO/Man-Page/
           <option>supported-transport</option>
         </term>
         <listitem>
-          <para>Optional <code>WakeSupportedTransport</code> that the service should advertize. Valid values are "UDP-Broadcast", "UDP-Unicast", "TCP-Unicast", "Other".</para>
+          <para>Optional <code>WakeSupportedTransport</code> that the service should advertize. Valid values are &quot;UDP-Broadcast&quot;, &quot;UDP-Unicast&quot;, &quot;TCP-Unicast&quot;, &quot;Other&quot;.</para>
         </listitem>
       </varlistentry>
       <varlistentry>
@@ -330,7 +340,7 @@ man(1), man(7), http://www.tldp.org/HOWTO/Man-Page/
     <title>Tracker Plugin</title>
     <para>The tracker plugin uses the centralized database of meta information
       from the tracker project. See the
-      <ulink url="http://projects.gnome.org/tracker/">tracker project website </ulink> for more information about tracker.
+      <ulink url="https://wiki.gnome.org/Projects/Tracker">tracker project website </ulink> for more information about tracker.
     </para>
     <variablelist>
       <varlistentry>
@@ -434,37 +444,9 @@ man(1), man(7), http://www.tldp.org/HOWTO/Man-Page/
     <para>This plugin has no special options.</para>
   </refsect1>
   <refsect1>
-    <title>ZDFMediathek</title>
-    <para>The  <ulink url="http://www.zdf.de/ZDFmediathek">ZDF Mediathek</ulink> is an online archive of broadcasts from the second german television. This plugin can be used to subscribes to the RSS feeds of this service and expose the broadcasts via UPnP.</para>
-    <variablelist>
-      <varlistentry>
-        <term>
-          <option>rss</option>
-        </term>
-        <listitem>
-          <para>A list of broadcast ids. How to get the broadcast ids from the web site is described in the file <filename>README.Mediathek</filename> (in german only).</para>
-        </listitem>
-      </varlistentry>
-      <varlistentry>
-        <term>
-          <option>update-interval</option>
-        </term>
-        <listitem>
-          <para>Time in seconds after which the plugin checks for new content. The default interval is 1800 seconds (30 minutes), the minimum interval 10 minutes.</para>
-        </listitem>
-      </varlistentry>
-      <varlistentry>
-        <term>
-          <option>video-format</option>
-        </term>
-        <listitem>
-          <para>The mediathek usually offers the videos in two formats, WMV and H.264. Possible values here are wmv and mp4. The default video format is wmv.</para>
-          <note>
-            <para>Proxying of general RTSP in <application>&dhpackage;</application> as used by the H.264 streams is currently not working very well. Please enable mp4 only if your renderer can handle RTSP by itself.</para>
-          </note>
-        </listitem>
-      </varlistentry>
-    </variablelist>
+    <title>LightMediaScanner Plugin</title>
+    <para>The LightMediaScanner plugin exports the contents of the <ulink url="https://github.com/profusion/lightmediascanner">lightmediascanner daemon</ulink> </para>
+    <para>This plugin does not have any special options.</para>
   </refsect1>
   <refsect1>
     <title>GstLaunch Plugin</title>
@@ -519,7 +501,7 @@ man(1), man(7), http://www.tldp.org/HOWTO/Man-Page/
   </refsect1>
   <refsect1>
     <title>External</title>
-    <para>The External plugin is an consumer of the <ulink url="http://live.gnome.org/Rygel/MediaServer2Spec">MediaServer2 DBus interface specification</ulink>. This allows external programs to share their data via UPnP by implementing this DBus specification. The plugin picks up any implementation of this interface on the session bus and exposes the presented media via UPnP. Known implementors of this spec are  <ulink url="http://live.gnome.org/DVBDaemon">gnome-dvb-daemon</ulink>, <ulink url="http://www.rhythmbox.org">Rhythmbox</ulink> and <ulink url="http://live.gnome.org/Grilo">Grilo </ulink> via the grilo-ms2 project.</para>
+    <para>The External plugin is an consumer of the <ulink url="https://wiki.gnome.org/Projects/Rygel/MediaServer2Spec">MediaServer2 DBus interface specification</ulink>. This allows external programs to share their data via UPnP by implementing this DBus specification. The plugin picks up any implementation of this interface on the session bus and exposes the presented media via UPnP. Known implementors of this spec are  <ulink url="https://wiki.gnome.org/Projects/DVBDaemon">gnome-dvb-daemon</ulink>, <ulink url="http://www.rhythmbox.org">Rhythmbox</ulink> and <ulink url="https://wiki.gnome.org/Projects/Grilo">Grilo </ulink> via the grilo-ms2 project.</para>
     <para>You can disable the whole functionality by setting <userinput>enabled=false</userinput> in the <userinput>[External]</userinput> section of the configuration file.</para>
     <para>Individual peers may be enabled or disabled by creating sections corresponding to the D-Bus names of the peer:</para>
     <programlisting>[org.gnome.UPnP.MediaServer2.Rhythmbox]
@@ -531,7 +513,7 @@ enabled=false</programlisting>
     <para>The MPRIS plugin is a consumer of the  <ulink url="http://www.mpris.org">MPRIS2 DBus interface specification</ulink>. The implementation conforms to version 2.0 of the standard.
       </para>
     <para><application>&dhpackage;</application> exposes media players that implement the provider side of this DBus specification as DLNA Digital Media Renderers (DMR) similar to the Playbin plugin. This means that you can easily turn your media player into a DMR by implementing this DBus specification.</para>
-    <para>Players that implement this spec and are known to work with <application>&dhpackage;</application> are  <ulink url="http://banshee.fm">Banshee</ulink>, <ulink url="http://www.rhythmbox.org">Rhythmbox</ulink> and <ulink url="http://live.gnome.org/Totem">Totem</ulink>
+    <para>Players that implement this spec and are known to work with <application>&dhpackage;</application> are  <ulink url="http://banshee.fm">Banshee</ulink>, <ulink url="http://www.rhythmbox.org">Rhythmbox</ulink> and <ulink url="https://wiki.gnome.org/Apps/Videos">GNOME Videos (previously known as Totem)</ulink>
       </para>
     <para>You can disable the whole functionality by setting <userinput>enabled=false</userinput> in the <userinput>[MRPIS]</userinput> section of the configuration file.</para>
     <para>The configuration of this plugin is special. Plugin configuration is not done on the plugin but rather per peer that is found providing the MPRIS2 interface. See the following example to set the title for Banshee on MPRIS:</para>
@@ -544,7 +526,7 @@ title=@REALNAME@&apos;s Banshee on @HOSTNAME@</programlisting></para>
 <!-- In alpabetical order. -->    <para><citerefentry>
         <refentrytitle>rygel</refentrytitle>
         <manvolnum>1</manvolnum>
-      </citerefentry>, <filename>README.Mediathek</filename>, <citerefentry>
+      </citerefentry>, <citerefentry>
         <refentrytitle>gst-launch</refentrytitle>
         <manvolnum>1</manvolnum>
       </citerefentry></para>

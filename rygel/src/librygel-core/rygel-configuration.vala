@@ -11,18 +11,18 @@
  * This file is part of Rygel.
  *
  * Rygel is free software; you can redistribute it and/or modify
- * it under the terms of the GNU Lesser General Public License as published by
- * the Free Software Foundation; either version 2 of the License, or
- * (at your option) any later version.
+ * it under the terms of the GNU Lesser General Public
+ * License as published by the Free Software Foundation; either
+ * version 2.1 of the License, or (at your option) any later version.
  *
  * Rygel is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU Lesser General Public License for more details.
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ * Lesser General Public License for more details.
  *
- * You should have received a copy of the GNU Lesser General Public License
- * along with this program; if not, write to the Free Software Foundation,
- * Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
+ * You should have received a copy of the GNU Lesser General Public
+ * License along with this library; if not, write to the Free Software
+ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
 public errordomain Rygel.ConfigurationError {
@@ -31,7 +31,6 @@ public errordomain Rygel.ConfigurationError {
 }
 
 public enum Rygel.ConfigurationEntry {
-    UPNP_ENABLED,
     INTERFACE,
     PORT,
     TRANSCODING,
@@ -73,8 +72,6 @@ public interface Rygel.Configuration : GLib.Object {
      */
     public signal void setting_changed (string section, string key);
 
-    public abstract bool get_upnp_enabled () throws GLib.Error;
-
     [Deprecated (since="0.19.2", replacement="get_interfaces")]
     public abstract string get_interface () throws GLib.Error;
 
@@ -97,11 +94,11 @@ public interface Rygel.Configuration : GLib.Object {
 
     public abstract string get_media_engine () throws GLib.Error;
 
-    public abstract string get_video_upload_folder () throws GLib.Error;
+    public abstract string? get_video_upload_folder () throws GLib.Error;
 
-    public abstract string get_music_upload_folder () throws GLib.Error;
+    public abstract string? get_music_upload_folder () throws GLib.Error;
 
-    public abstract string get_picture_upload_folder () throws GLib.Error;
+    public abstract string? get_picture_upload_folder () throws GLib.Error;
 
     public abstract bool get_enabled (string section) throws GLib.Error;
 

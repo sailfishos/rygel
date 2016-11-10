@@ -12,18 +12,18 @@
  * This file is part of Rygel.
  *
  * Rygel is free software; you can redistribute it and/or modify
- * it under the terms of the GNU Lesser General Public License as published by
- * the Free Software Foundation; either version 2 of the License, or
- * (at your option) any later version.
+ * it under the terms of the GNU Lesser General Public
+ * License as published by the Free Software Foundation; either
+ * version 2.1 of the License, or (at your option) any later version.
  *
  * Rygel is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU Lesser General Public License for more details.
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ * Lesser General Public License for more details.
  *
- * You should have received a copy of the GNU Lesser General Public License
- * along with this program; if not, write to the Free Software Foundation,
- * Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
+ * You should have received a copy of the GNU Lesser General Public
+ * License along with this library; if not, write to the Free Software
+ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
 using Gee;
@@ -40,7 +40,6 @@ public class Rygel.CmdlineConfig : GLib.Object, Configuration {
     private static string[] ifaces;
     private static int port;
 
-    private static bool no_upnp;
     private static bool no_transcoding;
 
     private static bool disallow_upload;
@@ -71,11 +70,11 @@ public class Rygel.CmdlineConfig : GLib.Object, Configuration {
     // Command-line options
     const OptionEntry[] OPTIONS = {
         { "version", 0, 0, OptionArg.NONE, ref version,
-          "Display version number", null },
+          N_("Display version number"), null },
         { "network-interface", 'n', 0, OptionArg.STRING_ARRAY, ref ifaces,
           N_("Network Interfaces"), "INTERFACE" },
         { "port", 'p', 0, OptionArg.INT, ref port,
-          "Port", "PORT" },
+          N_("Port"), "PORT" },
         { "disable-transcoding", 't', 0, OptionArg.NONE, ref no_transcoding,
           N_("Disable transcoding"), null },
         { "disallow-upload", 'U', 0, OptionArg.NONE,
@@ -95,14 +94,12 @@ public class Rygel.CmdlineConfig : GLib.Object, Configuration {
           N_ ("Set plugin titles"), "PluginName:TITLE" },
         { "plugin-option", 'o', 0, OptionArg.STRING_ARRAY, ref plugin_options,
           N_ ("Set plugin options"), "PluginName:OPTION:VALUE1[,VALUE2,..]" },
-        { "disable-upnp", 'P', 0, OptionArg.NONE, ref no_upnp,
-          N_ ("Disable UPnP (streaming-only)"), null },
         { "config", 'c', 0, OptionArg.FILENAME, ref config_file,
           N_ ("Use configuration file instead of user configuration"), "FILE" },
         { "shutdown", 's', 0, OptionArg.NONE, ref shutdown,
-          N_ ("Shutdown remote Rygel reference"), null },
+          N_ ("Shut down remote Rygel reference"), null },
         { "replace", 'r', 0, OptionArg.NONE, ref replace,
-          N_ ("Replace currently running instance of rygel"), null },
+          N_ ("Replace currently running instance of Rygel"), null },
         { null }
     };
 
@@ -147,7 +144,7 @@ public class Rygel.CmdlineConfig : GLib.Object, Configuration {
                                          DBusProxyFlags.DO_NOT_LOAD_PROPERTIES);
                 rygel.shutdown ();
             } catch (Error error) {
-                warning (_("Failed to shut-down other rygel instance: %s"),
+                warning (_("Failed to shut down other Rygel instance: %s"),
                          error.message);
 
             }
@@ -156,14 +153,6 @@ public class Rygel.CmdlineConfig : GLib.Object, Configuration {
             if (shutdown) {
                 throw new CmdlineConfigError.VERSION_ONLY ("");
             }
-        }
-    }
-
-    public bool get_upnp_enabled () throws GLib.Error {
-        if (!no_upnp) {
-            throw new ConfigurationError.NO_VALUE_SET (_("No value available"));
-        } else {
-            return false;
         }
     }
 
@@ -288,15 +277,15 @@ public class Rygel.CmdlineConfig : GLib.Object, Configuration {
         return config_file;
     }
 
-    public string get_video_upload_folder () throws GLib.Error {
+    public string? get_video_upload_folder () throws GLib.Error {
         throw new ConfigurationError.NO_VALUE_SET (_("No value available"));
     }
 
-    public string get_music_upload_folder () throws GLib.Error {
+    public string? get_music_upload_folder () throws GLib.Error {
         throw new ConfigurationError.NO_VALUE_SET (_("No value available"));
     }
 
-    public string get_picture_upload_folder () throws GLib.Error {
+    public string? get_picture_upload_folder () throws GLib.Error {
         throw new ConfigurationError.NO_VALUE_SET (_("No value available"));
     }
 

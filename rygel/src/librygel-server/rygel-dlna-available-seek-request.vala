@@ -7,16 +7,21 @@
  * This file is part of Rygel.
  *
  * Rygel is free software; you can redistribute it and/or modify
- * it under the terms of the GNU Lesser General Public License as published by
- * the Free Software Foundation; either version 2 of the License, or
- * (at your option) any later version.
+ * it under the terms of the GNU Lesser General Public
+ * License as published by the Free Software Foundation; either
+ * version 2.1 of the License, or (at your option) any later version.
  *
- * You should have received a copy of the GNU Lesser General Public License
- * along with this program; if not, write to the Free Software Foundation,
- * Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
+ * Rygel is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ * Lesser General Public License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public
+ * License along with this library; if not, write to the Free Software
+ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
-public static const string GET_AVAILABLE_SEEK_RANGE_HEADER = "getAvailableSeekRange.dlna.org";
+public const string GET_AVAILABLE_SEEK_RANGE_HEADER = "getAvailableSeekRange.dlna.org";
 
 /**
  * This class represents a DLNA getAvailableSeekRange request.
@@ -30,11 +35,12 @@ public class Rygel.DLNAAvailableSeekRangeRequest : Rygel.HTTPSeekRequest {
      *
      * @param request The HTTP GET/HEAD request
      */
-    internal DLNAAvailableSeekRangeRequest (HTTPGet request)
-            throws HTTPSeekRequestError {
+    internal DLNAAvailableSeekRangeRequest (Soup.Message message,
+                                            Rygel.HTTPGetHandler handler)
+                                           throws HTTPSeekRequestError {
         base ();
 
-        var params = request.msg.request_headers.get_one
+        var params = message.request_headers.get_one
                                         (GET_AVAILABLE_SEEK_RANGE_HEADER);
 
         if (params == null) {
@@ -53,14 +59,15 @@ public class Rygel.DLNAAvailableSeekRangeRequest : Rygel.HTTPSeekRequest {
     /**
      * Return true if getAvailableSeekRange is supported.
      */
-    public static bool supported (HTTPGet request) {
+    public static bool supported (Soup.Message message,
+                                  Rygel.HTTPGetHandler handler) {
         return true;
     }
 
     /**
      * Return true of the HTTPGet contains a getAvailableSeekRange request.
      */
-    public static bool requested (HTTPGet request) {
-        return (request.msg.request_headers.get_one (GET_AVAILABLE_SEEK_RANGE_HEADER) != null);
+    public static bool requested (Soup.Message message) {
+        return (message.request_headers.get_one (GET_AVAILABLE_SEEK_RANGE_HEADER) != null);
     }
 }

@@ -10,18 +10,18 @@
  * This file is part of Rygel.
  *
  * Rygel is free software; you can redistribute it and/or modify
- * it under the terms of the GNU Lesser General Public License as published by
- * the Free Software Foundation; either version 2 of the License, or
- * (at your option) any later version.
+ * it under the terms of the GNU Lesser General Public
+ * License as published by the Free Software Foundation; either
+ * version 2.1 of the License, or (at your option) any later version.
  *
  * Rygel is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU Lesser General Public License for more details.
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ * Lesser General Public License for more details.
  *
- * You should have received a copy of the GNU Lesser General Public License
- * along with this program; if not, write to the Free Software Foundation,
- * Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
+ * You should have received a copy of the GNU Lesser General Public
+ * License along with this library; if not, write to the Free Software
+ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
 /**
@@ -60,11 +60,8 @@ public class Rygel.WritableUserConfig : Rygel.UserConfig {
     public bool is_upnp_enabled () {
         try {
             var autostart_file = this.get_autostart_file ();
-            if (this.user_config.query_exists () && autostart_file.query_exists ()) {
-                return this.get_upnp_enabled ();
-            }
 
-            return false;
+            return autostart_file.query_exists ();
         } catch (Error error) {
             return false;
         }
@@ -192,16 +189,12 @@ public class Rygel.WritableUserConfig : Rygel.UserConfig {
                 try {
                     dest.make_symbolic_link (source_path, null);
                 } catch (IOError.EXISTS err) {}
-
-                this.set_bool ("general", UPNP_ENABLED_KEY, true);
             } else {
                 // Stop service only if already running
                 // Then delete the symlink from user's autostart dir
                 try {
                     dest.delete (null);
                 } catch (IOError.NOT_FOUND err) {}
-
-                this.set_bool ("general", UPNP_ENABLED_KEY, false);
 
                 if (this.is_upnp_enabled ()) {
                     // Create proxy to Rygel

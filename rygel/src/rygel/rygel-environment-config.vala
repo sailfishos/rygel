@@ -10,18 +10,18 @@
  * This file is part of Rygel.
  *
  * Rygel is free software; you can redistribute it and/or modify
- * it under the terms of the GNU Lesser General Public License as published by
- * the Free Software Foundation; either version 2 of the License, or
- * (at your option) any later version.
+ * it under the terms of the GNU Lesser General Public
+ * License as published by the Free Software Foundation; either
+ * version 2.1 of the License, or (at your option) any later version.
  *
  * Rygel is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU Lesser General Public License for more details.
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ * Lesser General Public License for more details.
  *
- * You should have received a copy of the GNU Lesser General Public License
- * along with this program; if not, write to the Free Software Foundation,
- * Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
+ * You should have received a copy of the GNU Lesser General Public
+ * License along with this library; if not, write to the Free Software
+ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
 using Gee;
@@ -36,7 +36,6 @@ internal class Rygel.EnvironmentConfig : GLib.Object, Configuration {
     private static string ENABLED_KEY = "ENABLED";
     private static string INTERFACE_ENV = RYGEL_PREFIX + "_IFACE";
     private static string PORT_ENV = RYGEL_PREFIX + "_PORT";
-    private static string DISABLE_UPNP_ENV = DISABLE_PREFIX + "_UPNP";
     private static string TRANSCODING_ENV = DISABLE_PREFIX + "_TRANSCODING";
     private static string DISALLOW_UPLOAD_ENV = DISABLE_PREFIX + "_UPLOAD";
     private static string DISALLOW_DELETION_ENV = DISABLE_PREFIX + "_DELETION";
@@ -54,10 +53,6 @@ internal class Rygel.EnvironmentConfig : GLib.Object, Configuration {
         }
 
         return config;
-    }
-
-    public bool get_upnp_enabled () throws GLib.Error {
-        return !this.get_bool_variable (DISABLE_UPNP_ENV);
     }
 
     public string get_interface () throws GLib.Error {
@@ -101,15 +96,15 @@ internal class Rygel.EnvironmentConfig : GLib.Object, Configuration {
         return this.get_string_variable (MEDIA_ENGINE_ENV);
     }
 
-    public string get_video_upload_folder () throws GLib.Error {
+    public string? get_video_upload_folder () throws GLib.Error {
         throw new ConfigurationError.NO_VALUE_SET (_("No value available"));
     }
 
-    public string get_music_upload_folder () throws GLib.Error {
+    public string? get_music_upload_folder () throws GLib.Error {
         throw new ConfigurationError.NO_VALUE_SET (_("No value available"));
     }
 
-    public string get_picture_upload_folder () throws GLib.Error {
+    public string? get_picture_upload_folder () throws GLib.Error {
         throw new ConfigurationError.NO_VALUE_SET (_("No value available"));
     }
 

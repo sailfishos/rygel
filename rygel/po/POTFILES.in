@@ -1,15 +1,8 @@
 # List of source files containing translatable strings.
 # Please keep this file sorted alphabetically.
-[encoding: UTF-8]
 data/rygel.desktop.in.in
 data/rygel-preferences.desktop.in.in
-[type: gettext/glade]data/rygel-preferences.ui
-data/xml/AVTransport2.xml.in
-data/xml/ConnectionManager.xml.in
-data/xml/ContentDirectory.xml.in
-data/xml/MediaRenderer2.xml.in.in
-data/xml/MediaServer3.xml.in.in
-data/xml/RenderingControl2.xml.in
+data/rygel-preferences.ui
 src/librygel-core/rygel-base-configuration.vala
 src/librygel-core/rygel-basic-management-test.vala
 src/librygel-core/rygel-basic-management.vala
@@ -18,6 +11,7 @@ src/librygel-core/rygel-connection-manager.vala
 src/librygel-core/rygel-dbus-interface.vala
 src/librygel-core/rygel-description-file.vala
 src/librygel-core/rygel-energy-management-helper.c
+src/librygel-core/rygel-energy-management.vala
 src/librygel-core/rygel-icon-info.vala
 src/librygel-core/rygel-log-handler.vala
 src/librygel-core/rygel-media-device.vala
@@ -32,6 +26,8 @@ src/librygel-core/rygel-root-device.vala
 src/librygel-core/rygel-state-machine.vala
 src/librygel-core/rygel-v1-hacks.vala
 src/librygel-core/rygel-xml-utils.vala
+src/librygel-db/database-cursor.vala
+src/librygel-db/database.vala
 src/librygel-renderer-gst/rygel-playbin-player.vala
 src/librygel-renderer-gst/rygel-playbin-renderer.vala
 src/librygel-renderer/rygel-av-transport.vala
@@ -44,6 +40,11 @@ src/librygel-renderer/rygel-rendering-control.vala
 src/librygel-renderer/rygel-sink-connection-manager.vala
 src/librygel-renderer/rygel-time-utils.vala
 src/librygel-renderer/rygel-volume.vala
+src/librygel-ruih/rygel-ruih-icon-elem.vala
+src/librygel-ruih/rygel-ruih-protocol-elem.vala
+src/librygel-ruih/rygel-ruih-servicemanager.vala
+src/librygel-ruih/rygel-ruih-service.vala
+src/librygel-ruih/rygel-ruih-ui-elem.vala
 src/librygel-server/rygel-audio-item.vala
 src/librygel-server/rygel-browse.vala
 src/librygel-server/rygel-client-hacks.vala
@@ -155,16 +156,27 @@ src/plugins/external/rygel-external-plugin.vala
 src/plugins/external/rygel-external-thumbnail-factory.vala
 src/plugins/external/rygel-external-variant-util.vala
 src/plugins/gst-launch/rygel-gst-launch-audio-item.vala
-src/plugins/gst-launch/rygel-gst-launch-item.vala
 src/plugins/gst-launch/rygel-gst-launch-plugin.vala
 src/plugins/gst-launch/rygel-gst-launch-root-container.vala
 src/plugins/gst-launch/rygel-gst-launch-video-item.vala
-src/plugins/media-export/rygel-media-export-database-cursor.vala
-src/plugins/media-export/rygel-media-export-database.vala
+src/plugins/lms/rygel-lms-albums.vala
+src/plugins/lms/rygel-lms-all-images.vala
+src/plugins/lms/rygel-lms-all-music.vala
+src/plugins/lms/rygel-lms-database.vala
+src/plugins/lms/rygel-lms-image-years.vala
+src/plugins/lms/rygel-lms-music-root.vala
+src/plugins/lms/rygel-lms-root-container.vala
+src/plugins/media-export/constants.vala
 src/plugins/media-export/rygel-media-export-db-container.vala
 src/plugins/media-export/rygel-media-export-dummy-container.vala
+src/plugins/media-export/rygel-media-export-dvd-container.vala
+src/plugins/media-export/rygel-media-export-dvd-parser.vala
+src/plugins/media-export/rygel-media-export-extractor.vala
+src/plugins/media-export/rygel-media-export-extract.vala
+src/plugins/media-export/rygel-media-export-generic-extractor.vala
 src/plugins/media-export/rygel-media-export-harvester.vala
 src/plugins/media-export/rygel-media-export-harvesting-task.vala
+src/plugins/media-export/rygel-media-export-image-extractor.vala
 src/plugins/media-export/rygel-media-export-item-factory.vala
 src/plugins/media-export/rygel-media-export-leaf-query-container.vala
 src/plugins/media-export/rygel-media-export-media-cache-upgrader.vala
@@ -176,6 +188,7 @@ src/plugins/media-export/rygel-media-export-null-container.vala
 src/plugins/media-export/rygel-media-export-object-factory.vala
 src/plugins/media-export/rygel-media-export-photo-item.vala
 src/plugins/media-export/rygel-media-export-playlist-container.vala
+src/plugins/media-export/rygel-media-export-playlist-extractor.vala
 src/plugins/media-export/rygel-media-export-playlist-item.vala
 src/plugins/media-export/rygel-media-export-playlist-root-container.vala
 src/plugins/media-export/rygel-media-export-plugin.vala
@@ -184,9 +197,6 @@ src/plugins/media-export/rygel-media-export-query-container.vala
 src/plugins/media-export/rygel-media-export-recursive-file-monitor.vala
 src/plugins/media-export/rygel-media-export-root-container.vala
 src/plugins/media-export/rygel-media-export-sql-factory.vala
-src/plugins/media-export/rygel-media-export-sql-function.vala
-src/plugins/media-export/rygel-media-export-sqlite-wrapper.vala
-src/plugins/media-export/rygel-media-export-sql-operator.vala
 src/plugins/media-export/rygel-media-export-trackable-db-container.vala
 src/plugins/media-export/rygel-media-export-updatable-object.vala
 src/plugins/media-export/rygel-media-export-video-item.vala
@@ -229,6 +239,7 @@ src/plugins/tracker/rygel-tracker-upnp-property-map.vala
 src/plugins/tracker/rygel-tracker-video-item-factory.vala
 src/plugins/tracker/rygel-tracker-videos.vala
 src/plugins/tracker/rygel-tracker-years.vala
+src/rygel/rygel-acl.vala
 src/rygel/rygel-cmdline-config.vala
 src/rygel/rygel-dbus-service.vala
 src/rygel/rygel-environment-config.vala

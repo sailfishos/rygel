@@ -2,25 +2,27 @@
  * Copyright (C) 2008 Zeeshan Ali <zeenix@gmail.com>.
  * Copyright (C) 2008 Nokia Corporation.
  * Copyright (C) 2012,2013 Intel Corporation.
+ * Copyright (C) 2015 Jens Georg
  *
  * Author: Zeeshan Ali <zeenix@gmail.com>
  *         Jens Georg <jensg@openismus.com>
+ *         Jens Georg <mail@jensge.org>
  *
  * This file is part of Rygel.
  *
  * Rygel is free software; you can redistribute it and/or modify
- * it under the terms of the GNU Lesser General Public License as published by
- * the Free Software Foundation; either version 2 of the License, or
- * (at your option) any later version.
+ * it under the terms of the GNU Lesser General Public
+ * License as published by the Free Software Foundation; either
+ * version 2.1 of the License, or (at your option) any later version.
  *
  * Rygel is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU Lesser General Public License for more details.
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ * Lesser General Public License for more details.
  *
- * You should have received a copy of the GNU Lesser General Public License
- * along with this program; if not, write to the Free Software Foundation,
- * Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
+ * You should have received a copy of the GNU Lesser General Public
+ * License along with this library; if not, write to the Free Software
+ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
 using GUPnP;
@@ -31,342 +33,275 @@ using Gst.PbUtils;
  * Represents MediaExport item.
  */
 namespace Rygel.MediaExport.ItemFactory {
-    public static MediaFileItem? create_simple (MediaContainer parent,
-                                                File           file,
-                                                FileInfo       info) {
-        var title = info.get_display_name ();
-        MediaFileItem item;
-        var mime = ContentType.get_mime_type (info.get_content_type ());
 
-        if (mime.has_prefix ("video/")) {
-            item = new VideoItem (MediaCache.get_id (file), parent, title);
-        } else if (mime.has_prefix ("image/")) {
-            item = new PhotoItem (MediaCache.get_id (file), parent, title);
-        } else if (mime.has_prefix ("audio/") || mime == "application/ogg") {
-            item = new MusicItem (MediaCache.get_id (file), parent, title);
-        } else { // application/xml or text/xml
-            item = ItemFactory.create_playlist_item (file, parent, title);
-            if (item == null) {
-                return null;
-            }
-            // DLNA requires that DIDL_S playlist have text/xml MIME type.
-            mime = "text/xml";
-        }
-
-        item.mime_type = mime;
-        item.size = (int64) info.get_size ();
-        item.modified = info.get_attribute_uint64
-                                        (FileAttribute.TIME_MODIFIED);
-        item.add_uri (file.get_uri ());
-
-        return item;
+    internal errordomain ItemFactoryError {
+        DESERIALIZATION,
+        MISMATCH
     }
 
-    private static MediaFileItem? create_playlist_item (File file,
-                                                        MediaContainer parent,
-                                                        string fallback_title) {
-        try {
-            uint8[] contents;
+    private static bool check_variant_type (Variant v,
+                                            string typestring) throws Error {
+        if (!v.is_of_type (new VariantType (typestring))) {
+            var msg = "Variant type mismatch, expected %s, got %s";
+            throw new ItemFactoryError.DESERIALIZATION (msg,
+                                                        v.get_type_string (),
+                                                        typestring);
+        }
 
-            if (!file.load_contents (null, out contents, null)) {
-                return null;
-            }
+        return true;
+    }
 
-            /* Do some heuristic check if this file looks like XML */
-            var i = 0;
-            while (((char) contents[i]).isspace () && i < contents.length) {
-                i++;
-            }
+    static MediaObject? create (MediaContainer parent, VariantDict vd) {
+        VariantType? expected = null;
+        MediaObject? object = null;
 
-            if (contents[i] != '<') {
-                return null;
-            }
+        var upnp_class = vd.lookup_value (Serializer.UPNP_CLASS, expected);
+        var id = vd.lookup_value (Serializer.ID, expected);
+        var title = vd.lookup_value (Serializer.TITLE, expected);
+        var uri = vd.lookup_value (Serializer.URI, expected);
 
-            var didl_s = new MediaCollection.from_string ((string) contents);
-            var author = didl_s.author;
-            var title = didl_s.title;
+        var factory = new ObjectFactory ();
+        if (upnp_class.get_string ().has_prefix (MediaContainer.UPNP_CLASS)) {
+            object = factory.get_container (id.get_string (),
+                                            title.get_string (),
+                                            0,
+                                            uri.get_string ());
+        } else {
+            object = factory.get_item (parent,
+                                       id.get_string (),
+                                       title.get_string (),
+                                       upnp_class.get_string ());
+        }
 
-            if (author == null &&
-                title == null &&
-                didl_s.get_items () == null) {
-                return null;
-            }
+        object.add_uri (uri.get_string ());
 
-            if (title == null) {
-                title = fallback_title;
-            }
+        return object;
+    }
 
-            var item = new PlaylistItem (MediaCache.get_id (file),
-                                         parent,
-                                         title);
+    static int64 get_int64 (VariantDict vd, string key) {
+        var val = vd.lookup_value (key, VariantType.UINT64);
+        if (val != null) {
+            return (int64) val.get_uint64 ();
+        }
 
-            if (author != null) {
-                item.creator = author;
-            }
+        return -1;
+    }
 
-            item.dlna_profile = "DIDL_S";
+    static int32 get_int32 (VariantDict vd, string key) {
+        var val = vd.lookup_value (key, VariantType.INT32);
+        if (val != null) {
+            return val.get_int32 ();
+        }
 
-            return item;
-        } catch (Error e) {
+        return -1;
+    }
+
+
+    static MediaObject? create_from_variant (MediaContainer parent,
+                                             File           file,
+                                             Variant?       v)
+                                             throws Error {
+        VariantType? expected = null;
+        if (v == null) {
             return null;
         }
-    }
 
-    public static MediaFileItem? create_from_info (MediaContainer     parent,
-                                                   File               file,
-                                                   DiscovererInfo     info,
-                                                   GUPnPDLNA.Profile? profile,
-                                                   FileInfo           file_info) {
-        MediaFileItem item;
-        string id = MediaCache.get_id (file);
-        GLib.List<DiscovererAudioInfo> audio_streams;
-        GLib.List<DiscovererVideoInfo> video_streams;
+        ItemFactory.check_variant_type (v,"a{sv}");
 
-        audio_streams = (GLib.List<DiscovererAudioInfo>)
-                                        info.get_audio_streams ();
-        video_streams = (GLib.List<DiscovererVideoInfo>)
-                                        info.get_video_streams ();
+        VariantDict vd = new VariantDict (v);
 
-        if (audio_streams == null && video_streams == null) {
-            debug ("%s had neither audio nor video/picture " +
-                   "streams. Ignoring.",
-                   file.get_uri ());
+        var upnp_class = vd.lookup_value (Serializer.UPNP_CLASS, expected);
+        if (upnp_class == null) {
+            debug ("Did not find a UPnP class for item, ignoring");
 
             return null;
         }
 
-        if (audio_streams == null && video_streams.data.is_image()) {
-            item = new PhotoItem (id, parent, "");
-            return fill_photo_item (item as PhotoItem,
-                                    file,
-                                    info,
-                                    profile,
-                                    video_streams.data,
-                                    file_info);
-        } else if (video_streams != null) {
-            item = new VideoItem (id, parent, "");
-
-            var audio_info = null as DiscovererAudioInfo;
-            if (audio_streams != null) {
-                audio_info = audio_streams.data;
-            }
-
-            return fill_video_item (item as VideoItem,
-                                    file,
-                                    info,
-                                    profile,
-                                    video_streams.data,
-                                    audio_info,
-                                    file_info);
-        } else if (audio_streams != null) {
-            item = new MusicItem (id, parent, "");
-            return fill_music_item (item as MusicItem,
-                                    file,
-                                    info,
-                                    profile,
-                                    audio_streams.data,
-                                    file_info);
-        } else {
-            return null;
-        }
-    }
-
-    private static void fill_audio_item (AudioItem            item,
-                                         DiscovererInfo       info,
-                                         DiscovererAudioInfo? audio_info) {
-        if (info.get_duration () > 0) {
-            item.duration = (long) (info.get_duration () / Gst.SECOND);
-        } else {
-            item.duration = -1;
+        var object = create (parent, vd);
+        if (object is MediaContainer) {
+            return object;
         }
 
-        if (audio_info == null)
-            return;
-  
-        var tags = audio_info.get_tags ();
-        if (tags != null) {
-          uint tmp;
-          tags.get_uint (Tags.BITRATE, out tmp);
-          item.bitrate = (int) tmp / 8;
-        }
-        
-        item.channels = (int) audio_info.get_channels ();
-        item.sample_freq = (int) audio_info.get_sample_rate ();
-    }
+        var item = object as MediaFileItem;
 
+        // Fill general things
+        var val = vd.lookup_value (Serializer.MIME_TYPE, expected);
+        item.mime_type = val.get_string ();
 
-    private static MediaFileItem fill_video_item (VideoItem            item,
-                                                  File                 file,
-                                                  DiscovererInfo       info,
-                                                  GUPnPDLNA.Profile?   profile,
-                                                  DiscovererVideoInfo  video_info,
-                                                  DiscovererAudioInfo? audio_info,
-                                                  FileInfo             file_info) {
-        fill_audio_item (item as AudioItem, info, audio_info);
-        fill_media_item (item, file, info, profile, file_info);
+        item.size = get_int64 (vd, Serializer.SIZE);
 
-        item.width = (int) video_info.get_width ();
-        item.height = (int) video_info.get_height ();
+        val = vd.lookup_value (Serializer.MODIFIED, expected);
+        item.modified = val.get_uint64 ();
 
-        var color_depth = (int) video_info.get_depth ();
-        item.color_depth = (color_depth == 0) ? -1 : color_depth;
-
-        return item;
-    }
-
-    private static MediaFileItem fill_photo_item (PhotoItem           item,
-                                                  File                file,
-                                                  DiscovererInfo      info,
-                                                  GUPnPDLNA.Profile?  profile,
-                                                  DiscovererVideoInfo video_info,
-                                                  FileInfo            file_info) {
-        fill_media_item (item, file, info, profile, file_info);
-
-        item.width = (int) video_info.get_width ();
-        item.height = (int) video_info.get_height ();
-
-        var color_depth = (int) video_info.get_depth ();
-        item.color_depth = (color_depth == 0) ? -1 : color_depth;
-
-        return item;
-    }
-
-    private static MediaFileItem fill_music_item (MusicItem            item,
-                                                  File                 file,
-                                                  DiscovererInfo       info,
-                                                  GUPnPDLNA.Profile?   profile,
-                                                  DiscovererAudioInfo? audio_info,
-                                                  FileInfo             file_info) {
-        fill_audio_item (item as AudioItem, info, audio_info);
-        fill_media_item (item, file, info, profile, file_info);
-
-        if (audio_info == null) {
-            return item;
-        }
-        
-        var tags = audio_info.get_tags ();
-        if (tags == null) {
-            return item;
-        }
-        
-        string artist;
-        tags.get_string (Tags.ARTIST, out artist);
-        item.artist = artist;
-
-        string album;
-        tags.get_string (Tags.ALBUM, out album);
-        item.album = album;
-
-        string genre;
-        tags.get_string (Tags.GENRE, out genre);
-        item.genre = genre;
-
-        uint tmp;
-        tags.get_uint (Tags.ALBUM_VOLUME_NUMBER, out tmp);
-        item.disc = (int) tmp;
-
-        tags.get_uint (Tags.TRACK_NUMBER, out tmp);
-        item.track_number = (int) tmp;
-
-
-        var store = MediaArtStore.get_default ();
-
-        Sample sample;
-        tags.get_sample (Tags.IMAGE, out sample);
-        if (sample == null) {
-            tags.get_sample (Tags.PREVIEW_IMAGE, out sample);
+        val = vd.lookup_value (Serializer.DLNA_PROFILE, expected);
+        if (val != null) {
+            item.dlna_profile = val.get_string ();
         }
 
-        if (sample == null) {
-            store.search_media_art_for_file (item, file);
-
-            return item;
+        val = vd.lookup_value (Serializer.DATE, expected);
+        if (val != null) {
+            item.date = val.get_string ();
         }
 
-        unowned Structure structure = sample.get_caps ().get_structure (0);
+        if (item is AudioItem) {
+            var audio_item = item as AudioItem;
+            audio_item.duration = get_int32 (vd, Serializer.DURATION);
+            audio_item.bitrate = get_int32 (vd, Serializer.AUDIO_BITRATE);
+            audio_item.channels = get_int32 (vd, Serializer.AUDIO_CHANNELS);
+            audio_item.sample_freq = get_int32 (vd, Serializer.AUDIO_RATE);
 
-        int image_type;
-        structure.get_enum ("image-type",
-                            typeof (Gst.Tag.ImageType),
-                            out image_type);
-        switch (image_type) {
-            case Tag.ImageType.UNDEFINED:
-            case Tag.ImageType.FRONT_COVER:
-                Gst.MapInfo map_info;
-                sample.get_buffer ().map (out map_info, Gst.MapFlags.READ);
+            if (item is MusicItem) {
+                var music_item = item as MusicItem;
+                val = vd.lookup_value (Serializer.ARTIST, expected);
+                if (val != null) {
+                    music_item.artist = val.get_string ();
+                }
 
-                // Work-around bgo#739915
-                weak uint8[] data = map_info.data;
-                data.length = (int) map_info.size;
+                val = vd.lookup_value (Serializer.ALBUM, expected);
+                if (val != null) {
+                    music_item.album = val.get_string ();
+                }
 
-                store.add (item, file, data, structure.get_name ());
-                sample.get_buffer ().unmap (map_info);
-                break;
-            default:
-                break;
-        }
+                val = vd.lookup_value (Serializer.GENRE, expected);
+                if (val != null) {
+                    music_item.genre = val.get_string ();
+                }
 
-        return item;
-    }
-
-    private static void fill_media_item (MediaFileItem      item,
-                                         File               file,
-                                         DiscovererInfo     info,
-                                         GUPnPDLNA.Profile? profile,
-                                         FileInfo           file_info) {
-        string title = null;
-
-        var tags = info.get_tags ();
-        if (tags == null ||
-            !tags.get_string (Tags.TITLE, out title)) {
-            title = file_info.get_display_name ();
-
-        }
-
-        // This assumes the datetime is valid; checking some demuxers this
-        Gst.DateTime? dt = null;
-        if (tags != null && tags.get_date_time (Tags.DATE_TIME, out dt)) {
-            // Make a minimal valid iso8601 date - bgo#702231
-            // This mostly happens with MP3 files which only have a year
-            if (!dt.has_day () || !dt.has_month ()) {
-                item.date = "%d-%02d-%02d".printf (dt.get_year (),
-                                                   dt.has_month () ?
-                                                       dt.get_month () : 1,
-                                                   dt.has_day () ?
-                                                       dt.get_day () : 1);
-            } else {
-                item.date = dt.to_iso8601_string ();
+                music_item.track_number = get_int32 (vd,
+                                                     Serializer.TRACK_NUMBER);
+                music_item.disc = get_int32 (vd, Serializer.VOLUME_NUMBER);
             }
         }
 
-        item.title = title;
-
-        // use mtime if no time tag was available
-        var mtime = file_info.get_attribute_uint64
-                                        (FileAttribute.TIME_MODIFIED);
-
-        if (item.date == null) {
-            TimeVal tv = { (long) mtime, 0 };
-            item.date = tv.to_iso8601 ();
+        if (item is VisualItem) {
+            var visual_item = item as VisualItem;
+            visual_item.width = get_int32 (vd, Serializer.VIDEO_WIDTH);
+            visual_item.height = get_int32 (vd, Serializer.VIDEO_HEIGHT);
+            visual_item.color_depth = get_int32 (vd, Serializer.VIDEO_DEPTH);
         }
 
-        // If the date has a timezone offset, make sure it contains a
-        // colon bgo#702231, DLNA 7.3.21.1
-        if ("T" in item.date) {
-            var date = new Soup.Date.from_string (item.date);
-            item.date = date.to_string (Soup.DateFormat.ISO8601_FULL);
-        }
-
-        item.size = (int64) file_info.get_size ();
-        item.modified = (int64) mtime;
-        if (profile != null && profile.name != null) {
-            item.dlna_profile = profile.name;
-            item.mime_type = profile.mime;
-        } else {
-            item.mime_type = ContentType.get_mime_type
-                                        (file_info.get_content_type ());
-        }
-
-        item.add_uri (file.get_uri ());
+        return item as MediaFileItem;
     }
+
+    private static void apply_meta_data (MediaFileItem item, Variant v)
+                                         throws Error {
+        ItemFactory.check_variant_type (v, "(msmsmsiii)");
+
+        var it = v.iterator ();
+        var val = it.next_value ().get_maybe ();
+        item.artist = val == null ? null : val.dup_string ();
+
+        // Audio item
+        val = it.next_value ().get_maybe (); // album
+        var album = val == null ? null : val.dup_string ();
+
+        val = it.next_value ().get_maybe ();
+        item.genre = val == null ? null : val.dup_string ();
+
+        // Audio item
+        var disc = it.next_value ().get_int32 ();
+
+        if (item is AudioItem) {
+            var audio_item = item as AudioItem;
+            var track_number = it.next_value ().get_int32 ();
+            audio_item.bitrate = it.next_value ().get_int32 ();
+            audio_item.album = album;
+
+            if (item is MusicItem) {
+                var music_item = item as MusicItem;
+                music_item.disc = disc;
+                music_item.track_number = track_number;
+            }
+        }
+    }
+
+    private static void apply_video_info (MediaFileItem item, Variant v)
+                                          throws Error {
+        ItemFactory.check_variant_type (v, "(iii)");
+
+        if (!(item is VisualItem)) {
+            var msg = "UPnP class does not match supplied meta data";
+            throw new ItemFactoryError.MISMATCH (msg);
+        }
+
+        var visual_item = item as VisualItem;
+        var it = v.iterator ();
+        visual_item.width = it.next_value ().get_int32 ();
+        visual_item.height = it.next_value ().get_int32 ();
+        visual_item.color_depth = it.next_value ().get_int32 ();
+    }
+
+    private static void apply_audio_info (MediaFileItem item, Variant v)
+                                          throws Error {
+        ItemFactory.check_variant_type (v, "(ii)");
+
+        if (!(item is AudioItem)) {
+            var msg = "UPnP class does not match supplied meta data";
+            throw new ItemFactoryError.MISMATCH (msg);
+        }
+
+        var audio_item = item as AudioItem;
+        var it = v.iterator ();
+        audio_item.channels = it.next_value ().get_int32 ();
+        audio_item.sample_freq = it.next_value ().get_int32 ();
+    }
+
+    private static void apply_info (MediaFileItem item, Variant v)
+                                    throws Error {
+        ItemFactory.check_variant_type (v, "(msmsi)");
+
+        var it = v.iterator ();
+        var val = it.next_value ().get_maybe ();
+        if (val != null) {
+            item.title = val.dup_string ();
+        }
+
+        val = it.next_value ().get_maybe ();
+        if (val != null) {
+            item.date = val.dup_string ();
+        }
+
+        if (item is AudioItem) {
+            (item as AudioItem).duration = it.next_value ().get_int32 ();
+        }
+    }
+
+    private static void apply_dlna_profile (MediaFileItem item, Variant v)
+                                            throws Error {
+        ItemFactory.check_variant_type (v, "(ss)");
+
+        var it = v.iterator ();
+        item.dlna_profile = it.next_value ().dup_string ();
+        item.mime_type = it.next_value ().dup_string ();
+    }
+
+    private static void apply_file_info (MediaObject object, Variant v)
+                                         throws Error {
+        ItemFactory.check_variant_type (v, "(stst)");
+
+        var it = v.iterator ();
+
+        var display_name = it.next_value ();
+        if (object.title == null || object.title == "") {
+            object.title = display_name.dup_string ();
+        }
+
+        object.modified = (int64) it.next_value ().get_uint64 ();
+
+        if (object is MediaFileItem) {
+            var item = object as MediaFileItem;
+
+            var mime = it.next_value ();
+            if (item.mime_type == null) {
+                item.mime_type = mime.dup_string ();
+            }
+
+            if (item.date == null) {
+                TimeVal tv = { (long) item.modified, 0 };
+                item.date = tv.to_iso8601 ();
+            }
+            item.size = (int64) it.next_value ().get_uint64 ();
+        }
+    }
+
 }

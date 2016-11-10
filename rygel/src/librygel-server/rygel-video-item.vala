@@ -12,18 +12,18 @@
  * This file is part of Rygel.
  *
  * Rygel is free software; you can redistribute it and/or modify
- * it under the terms of the GNU Lesser General Public License as published by
- * the Free Software Foundation; either version 2 of the License, or
- * (at your option) any later version.
+ * it under the terms of the GNU Lesser General Public
+ * License as published by the Free Software Foundation; either
+ * version 2.1 of the License, or (at your option) any later version.
  *
  * Rygel is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU Lesser General Public License for more details.
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ * Lesser General Public License for more details.
  *
- * You should have received a copy of the GNU Lesser General Public License
- * along with this program; if not, write to the Free Software Foundation,
- * Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
+ * You should have received a copy of the GNU Lesser General Public
+ * License along with this library; if not, write to the Free Software
+ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
 using GUPnP;
@@ -167,13 +167,13 @@ public class Rygel.VideoItem : AudioItem, VisualItem {
                                                                       index,
                                                                       null);
                     subtitle.add_didl_node (didl_item);
-                    subtitle.uri = uri; // Now restore the original URI
 
                     if (main_subtitle == null) {
                         main_subtitle = new Subtitle (subtitle.mime_type,
                                                       subtitle.caption_type);
-                        main_subtitle.uri = uri;
+                        main_subtitle.uri = subtitle.uri;
                     }
+                    subtitle.uri = uri; // Now restore the original URI
                 } else if (main_subtitle == null) {
                     main_subtitle = subtitle;
                 }
@@ -186,14 +186,13 @@ public class Rygel.VideoItem : AudioItem, VisualItem {
                 // Add resource-level subtitle metadata to all streamable
                 // video resources Note: All resources have already been
                 // serialized by the base
+
+                // Work-around bgo#753382 - add subtitle to all resources
                 var resources = didl_item.get_resources ();
                 foreach (var resource in resources) {
-                    if ( (resource.protocol_info.dlna_flags
-                          & DLNAFlags.STREAMING_TRANSFER_MODE) != 0) {
-                        resource.subtitle_file_type =
-                            main_subtitle.caption_type.up ();
-                        resource.subtitle_file_uri = main_subtitle.uri;
-                    }
+                    resource.subtitle_file_type =
+                        main_subtitle.caption_type.up ();
+                    resource.subtitle_file_uri = main_subtitle.uri;
                 }
             }
         }
