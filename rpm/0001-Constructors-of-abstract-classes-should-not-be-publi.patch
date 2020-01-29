@@ -1,0 +1,417 @@
+From 4b0c7c912a544f404debed275b8d0af4fab7dd58 Mon Sep 17 00:00:00 2001
+From: Rico Tzschichholz <ricotz@ubuntu.com>
+Date: Sat, 16 Mar 2019 15:30:07 +0100
+Subject: [PATCH] Constructors of abstract classes should not be public
+
+---
+ .../rygel-recursive-module-loader.vala        |  2 +-
+ src/librygel-server/rygel-http-request.vala   |  6 ++--
+ .../rygel-last-change-entry.vala              |  2 +-
+ .../rygel-media-container.vala                | 12 ++++----
+ .../rygel-media-file-item.vala                |  8 +++---
+ .../rygel-media-server-plugin.vala            |  8 +++---
+ .../gstreamer/rygel-audio-transcoder.vala     | 28 +++++++++----------
+ .../gstreamer/rygel-gst-transcoder.vala       |  8 +++---
+ .../gstreamer/rygel-video-transcoder.vala     | 20 ++++++-------
+ .../lms/rygel-lms-category-container.vala     | 20 ++++++-------
+ .../rygel-media-export-query-container.vala   |  6 ++--
+ .../rygel-tracker-category-container.vala     |  8 +++---
+ .../tracker/rygel-tracker-item-factory.vala   |  8 +++---
+ .../rygel-tracker-metadata-container.vala     | 10 +++----
+ .../rygel-tracker-metadata-multivalues.vala   | 12 ++++----
+ .../rygel-tracker-metadata-values.vala        | 12 ++++----
+ src/plugins/tracker/rygel-tracker-query.vala  |  2 +-
+ src/ui/rygel-preferences-section.vala         |  4 +--
+ 18 files changed, 88 insertions(+), 88 deletions(-)
+
+diff --git a/src/librygel-core/rygel-recursive-module-loader.vala b/src/librygel-core/rygel-recursive-module-loader.vala
+index d96aee20..cb9939df 100644
+--- a/src/librygel-core/rygel-recursive-module-loader.vala
++++ b/src/librygel-core/rygel-recursive-module-loader.vala
+@@ -48,7 +48,7 @@ public abstract class Rygel.RecursiveModuleLoader : Object {
+      *
+      * @param path base path of the loader.
+      */
+-    public RecursiveModuleLoader (string path) {
++    protected RecursiveModuleLoader (string path) {
+         Object (base_path : path);
+     }
+ 
+diff --git a/src/librygel-server/rygel-http-request.vala b/src/librygel-server/rygel-http-request.vala
+index c2cb1569..e67a475b 100644
+--- a/src/librygel-server/rygel-http-request.vala
++++ b/src/librygel-server/rygel-http-request.vala
+@@ -48,9 +48,9 @@ public abstract class Rygel.HTTPRequest : GLib.Object, Rygel.StateMachine {
+ 
+     internal ClientHacks hack;
+ 
+-    public HTTPRequest (HTTPServer   http_server,
+-                        Soup.Server  server,
+-                        Soup.Message msg) {
++    protected HTTPRequest (HTTPServer   http_server,
++                           Soup.Server  server,
++                           Soup.Message msg) {
+         this.http_server = http_server;
+         this.cancellable = new Cancellable ();
+         this.root_container = http_server.root_container;
+diff --git a/src/librygel-server/rygel-last-change-entry.vala b/src/librygel-server/rygel-last-change-entry.vala
+index c252eefe..173091a7 100644
+--- a/src/librygel-server/rygel-last-change-entry.vala
++++ b/src/librygel-server/rygel-last-change-entry.vala
+@@ -27,7 +27,7 @@ internal abstract class Rygel.LastChangeEntry : Object {
+     private string id;
+     private uint update_id;
+ 
+-    public LastChangeEntry (string tag, string id, uint update_id) {
++    protected LastChangeEntry (string tag, string id, uint update_id) {
+         this.tag = tag;
+         this.id = id;
+         this.update_id = update_id;
+diff --git a/src/librygel-server/rygel-media-container.vala b/src/librygel-server/rygel-media-container.vala
+index 7cdf310a..d9f9ed44 100644
+--- a/src/librygel-server/rygel-media-container.vala
++++ b/src/librygel-server/rygel-media-container.vala
+@@ -269,10 +269,10 @@ public abstract class Rygel.MediaContainer : MediaObject {
+      * @param title See the title property of the #RygelMediaObject class.
+      * @param child_count The initially-known number of child items.
+      */
+-    public MediaContainer (string          id,
+-                           MediaContainer? parent,
+-                           string          title,
+-                           int             child_count) {
++    protected MediaContainer (string          id,
++                              MediaContainer? parent,
++                              string          title,
++                              int             child_count) {
+         Object (id : id,
+                 parent : parent,
+                 title : title,
+@@ -286,8 +286,8 @@ public abstract class Rygel.MediaContainer : MediaObject {
+      * @param title See the title property of the #RygelMediaObject.
+      * @param child_count The initially-known number of child items.
+      */
+-    public MediaContainer.root (string title,
+-                                int    child_count) {
++    protected MediaContainer.root (string title,
++                                   int    child_count) {
+         Object (id : "0",
+                 parent : null,
+                 title : title,
+diff --git a/src/librygel-server/rygel-media-file-item.vala b/src/librygel-server/rygel-media-file-item.vala
+index 1fed1aaa..c22b62a1 100644
+--- a/src/librygel-server/rygel-media-file-item.vala
++++ b/src/librygel-server/rygel-media-file-item.vala
+@@ -104,10 +104,10 @@ public abstract class Rygel.MediaFileItem : MediaItem {
+ 
+     protected static Regex address_regex;
+ 
+-    public MediaFileItem (string         id,
+-                          MediaContainer parent,
+-                          string         title,
+-                          string         upnp_class) {
++    protected MediaFileItem (string         id,
++                             MediaContainer parent,
++                             string         title,
++                             string         upnp_class) {
+         Object (id : id,
+                 parent : parent,
+                 title : title,
+diff --git a/src/librygel-server/rygel-media-server-plugin.vala b/src/librygel-server/rygel-media-server-plugin.vala
+index e162020b..61f6951e 100644
+--- a/src/librygel-server/rygel-media-server-plugin.vala
++++ b/src/librygel-server/rygel-media-server-plugin.vala
+@@ -126,10 +126,10 @@ public abstract class Rygel.MediaServerPlugin : Rygel.Plugin {
+      * @param name The non-human-readable name for the plugin and its service, used in UPnP messages and in the Rygel configuration file.
+      * @param description An optional human-readable description (modelDescription) of the UPnP service provided by the plugin.
+      */
+-    public MediaServerPlugin (MediaContainer root_container,
+-                              string         name,
+-                              string?        description = null,
+-                              PluginCapabilities capabilities =
++    protected MediaServerPlugin (MediaContainer root_container,
++                                 string         name,
++                                 string?        description = null,
++                                 PluginCapabilities capabilities =
+                                         PluginCapabilities.NONE) {
+         Object (desc_path : MEDIA_SERVER_DESC_PATH,
+                 name : name,
+diff --git a/src/media-engines/gstreamer/rygel-audio-transcoder.vala b/src/media-engines/gstreamer/rygel-audio-transcoder.vala
+index 6e2f1cdc..19945d6c 100644
+--- a/src/media-engines/gstreamer/rygel-audio-transcoder.vala
++++ b/src/media-engines/gstreamer/rygel-audio-transcoder.vala
+@@ -37,13 +37,13 @@ internal abstract class Rygel.AudioTranscoder : Rygel.GstTranscoder {
+ 
+     public const string NO_CONTAINER = null;
+ 
+-    public AudioTranscoder (string  name,
+-                            string  content_type,
+-                            string  dlna_profile,
+-                            int     audio_bitrate,
+-                            string? container_caps,
+-                            string  audio_codec_caps,
+-                            string  extension) {
++    protected AudioTranscoder (string  name,
++                               string  content_type,
++                               string  dlna_profile,
++                               int     audio_bitrate,
++                               string? container_caps,
++                               string  audio_codec_caps,
++                               string  extension) {
+         base (name, content_type, dlna_profile, extension);
+ 
+         this.audio_bitrate = audio_bitrate;
+@@ -54,13 +54,13 @@ internal abstract class Rygel.AudioTranscoder : Rygel.GstTranscoder {
+         this.audio_codec_format = Caps.from_string (audio_codec_caps);
+     }
+ 
+-    public AudioTranscoder.with_class (string  name,
+-                                       string  content_type,
+-                                       string  dlna_profile,
+-                                       int     audio_bitrate,
+-                                       string? container_caps,
+-                                       string  audio_codec_caps,
+-                                       string  extension) {
++    protected AudioTranscoder.with_class (string  name,
++                                          string  content_type,
++                                          string  dlna_profile,
++                                          int     audio_bitrate,
++                                          string? container_caps,
++                                          string  audio_codec_caps,
++                                          string  extension) {
+         base (name, content_type, dlna_profile, extension);
+ 
+         this.audio_bitrate = audio_bitrate;
+diff --git a/src/media-engines/gstreamer/rygel-gst-transcoder.vala b/src/media-engines/gstreamer/rygel-gst-transcoder.vala
+index aa98cc3f..4bb8a161 100644
+--- a/src/media-engines/gstreamer/rygel-gst-transcoder.vala
++++ b/src/media-engines/gstreamer/rygel-gst-transcoder.vala
+@@ -57,10 +57,10 @@ internal abstract class Rygel.GstTranscoder : GLib.Object {
+ 
+     private bool link_failed;
+ 
+-    public GstTranscoder (string name,
+-                          string mime_type,
+-                          string dlna_profile,
+-                          string extension) {
++    protected GstTranscoder (string name,
++                             string mime_type,
++                             string dlna_profile,
++                             string extension) {
+         GLib.Object (name : name,
+                      mime_type : mime_type,
+                      dlna_profile : dlna_profile,
+diff --git a/src/media-engines/gstreamer/rygel-video-transcoder.vala b/src/media-engines/gstreamer/rygel-video-transcoder.vala
+index 48ccfe6a..b87c2cdd 100644
+--- a/src/media-engines/gstreamer/rygel-video-transcoder.vala
++++ b/src/media-engines/gstreamer/rygel-video-transcoder.vala
+@@ -34,16 +34,16 @@ internal abstract class Rygel.VideoTranscoder : Rygel.AudioTranscoder {
+     private Caps video_codec_format;
+     private Caps video_restrictions = null;
+ 
+-    public VideoTranscoder (string  name,
+-                            string  content_type,
+-                            string  dlna_profile,
+-                            int     audio_bitrate,
+-                            int     video_bitrate,
+-                            string  container_caps,
+-                            string  audio_codec_caps,
+-                            string  video_codec_caps,
+-                            string  extension,
+-                            string? restrictions = null) {
++    protected VideoTranscoder (string  name,
++                               string  content_type,
++                               string  dlna_profile,
++                               int     audio_bitrate,
++                               int     video_bitrate,
++                               string  container_caps,
++                               string  audio_codec_caps,
++                               string  video_codec_caps,
++                               string  extension,
++                               string? restrictions = null) {
+ 
+         base.with_class (name,
+                          content_type,
+diff --git a/src/plugins/lms/rygel-lms-category-container.vala b/src/plugins/lms/rygel-lms-category-container.vala
+index 331772cc..4ff3cce0 100644
+--- a/src/plugins/lms/rygel-lms-category-container.vala
++++ b/src/plugins/lms/rygel-lms-category-container.vala
+@@ -374,16 +374,16 @@ public abstract class Rygel.LMS.CategoryContainer : Rygel.MediaContainer,
+ 
+     }
+ 
+-    public CategoryContainer (string db_id,
+-                              MediaContainer parent,
+-                              string title,
+-                              LMS.Database lms_db,
+-                              string sql_all,
+-                              string sql_find_object,
+-                              string sql_count,
+-                              string? sql_added,
+-                              string? sql_removed
+-                             ) {
++    protected CategoryContainer (string db_id,
++                                 MediaContainer parent,
++                                 string title,
++                                 LMS.Database lms_db,
++                                 string sql_all,
++                                 string sql_find_object,
++                                 string sql_count,
++                                 string? sql_added,
++                                 string? sql_removed
++                                ) {
+         Object (id : "%s:%s".printf (parent.id, db_id),
+                 db_id : db_id,
+                 parent : parent,
+diff --git a/src/plugins/media-export/rygel-media-export-query-container.vala b/src/plugins/media-export/rygel-media-export-query-container.vala
+index 53071b65..10ed9954 100644
+--- a/src/plugins/media-export/rygel-media-export-query-container.vala
++++ b/src/plugins/media-export/rygel-media-export-query-container.vala
+@@ -30,9 +30,9 @@ internal abstract class Rygel.MediaExport.QueryContainer : DBContainer {
+     public SearchExpression expression { get; construct set; }
+ 
+     // constructors
+-    public QueryContainer (SearchExpression expression,
+-                           string           id,
+-                           string           name) {
++    protected QueryContainer (SearchExpression expression,
++                              string           id,
++                              string           name) {
+         Object (id : id,
+                 parent : null,
+                 title : name,
+diff --git a/src/plugins/tracker/rygel-tracker-category-container.vala b/src/plugins/tracker/rygel-tracker-category-container.vala
+index 4482d991..8be8be9c 100644
+--- a/src/plugins/tracker/rygel-tracker-category-container.vala
++++ b/src/plugins/tracker/rygel-tracker-category-container.vala
+@@ -31,10 +31,10 @@ public abstract class Rygel.Tracker.CategoryContainer : Rygel.SimpleContainer {
+ 
+     private CategoryAllContainer all_container;
+ 
+-    public CategoryContainer (string         id,
+-                              MediaContainer parent,
+-                              string         title,
+-                              ItemFactory    item_factory) {
++    protected CategoryContainer (string         id,
++                                 MediaContainer parent,
++                                 string         title,
++                                 ItemFactory    item_factory) {
+         base (id, parent, title);
+ 
+         this.item_factory = item_factory;
+diff --git a/src/plugins/tracker/rygel-tracker-item-factory.vala b/src/plugins/tracker/rygel-tracker-item-factory.vala
+index 5c307433..ac40add0 100644
+--- a/src/plugins/tracker/rygel-tracker-item-factory.vala
++++ b/src/plugins/tracker/rygel-tracker-item-factory.vala
+@@ -56,10 +56,10 @@ public abstract class Rygel.Tracker.ItemFactory {
+ 
+     public ArrayList<string> properties;
+ 
+-    public ItemFactory (string  category,
+-                        string  category_iri,
+-                        string  upnp_class,
+-                        string? upload_dir) {
++    protected ItemFactory (string  category,
++                           string  category_iri,
++                           string  upnp_class,
++                           string? upload_dir) {
+         this.category = category;
+         this.category_iri = category_iri;
+         this.upnp_class = upnp_class;
+diff --git a/src/plugins/tracker/rygel-tracker-metadata-container.vala b/src/plugins/tracker/rygel-tracker-metadata-container.vala
+index 689968c6..f5defad0 100644
+--- a/src/plugins/tracker/rygel-tracker-metadata-container.vala
++++ b/src/plugins/tracker/rygel-tracker-metadata-container.vala
+@@ -42,11 +42,11 @@ public abstract class Rygel.Tracker.MetadataContainer : Rygel.SimpleContainer {
+     private Sparql.Connection resources;
+     protected QueryTriplets triplets;
+ 
+-    public MetadataContainer (string         id,
+-                              MediaContainer parent,
+-                              string         title,
+-                              ItemFactory    item_factory,
+-                              string?        child_class = null) {
++    protected MetadataContainer (string         id,
++                                 MediaContainer parent,
++                                 string         title,
++                                 ItemFactory    item_factory,
++                                 string?        child_class = null) {
+         base (id, parent, title);
+ 
+         this.item_factory = item_factory;
+diff --git a/src/plugins/tracker/rygel-tracker-metadata-multivalues.vala b/src/plugins/tracker/rygel-tracker-metadata-multivalues.vala
+index 69386c9d..a5d94716 100644
+--- a/src/plugins/tracker/rygel-tracker-metadata-multivalues.vala
++++ b/src/plugins/tracker/rygel-tracker-metadata-multivalues.vala
+@@ -34,12 +34,12 @@ using Gee;
+ public abstract class Rygel.Tracker.MetadataMultiValues : MetadataContainer {
+     public string[] key_chain;
+ 
+-    public MetadataMultiValues (string         id,
+-                                MediaContainer parent,
+-                                string         title,
+-                                ItemFactory    item_factory,
+-                                string[]       key_chain,
+-                                string?        child_class = null) {
++    protected MetadataMultiValues (string         id,
++                                   MediaContainer parent,
++                                   string         title,
++                                   ItemFactory    item_factory,
++                                   string[]       key_chain,
++                                   string?        child_class = null) {
+         base (id, parent, title, item_factory, child_class);
+ 
+         this.key_chain = key_chain;
+diff --git a/src/plugins/tracker/rygel-tracker-metadata-values.vala b/src/plugins/tracker/rygel-tracker-metadata-values.vala
+index 8c0e8477..b3937742 100644
+--- a/src/plugins/tracker/rygel-tracker-metadata-values.vala
++++ b/src/plugins/tracker/rygel-tracker-metadata-values.vala
+@@ -33,12 +33,12 @@ using Tracker;
+ public abstract class Rygel.Tracker.MetadataValues : MetadataContainer {
+     private string property;
+ 
+-    public MetadataValues (string         id,
+-                           MediaContainer parent,
+-                           string         title,
+-                           ItemFactory    item_factory,
+-                           string         property,
+-                           string?        child_class = null) {
++    protected MetadataValues (string         id,
++                              MediaContainer parent,
++                              string         title,
++                              ItemFactory    item_factory,
++                              string         property,
++                              string?        child_class = null) {
+         base (id, parent, title, item_factory, child_class);
+ 
+         this.property = property;
+diff --git a/src/plugins/tracker/rygel-tracker-query.vala b/src/plugins/tracker/rygel-tracker-query.vala
+index 60dd1e06..8aa7ea08 100644
+--- a/src/plugins/tracker/rygel-tracker-query.vala
++++ b/src/plugins/tracker/rygel-tracker-query.vala
+@@ -32,7 +32,7 @@ using Tracker;
+ public abstract class Rygel.Tracker.Query {
+     public QueryTriplets triplets;
+ 
+-    public Query (QueryTriplets triplets) {
++    protected Query (QueryTriplets triplets) {
+         this.triplets = triplets;
+     }
+ 
+diff --git a/src/ui/rygel-preferences-section.vala b/src/ui/rygel-preferences-section.vala
+index c6121e49..e47ac246 100644
+--- a/src/ui/rygel-preferences-section.vala
++++ b/src/ui/rygel-preferences-section.vala
+@@ -27,8 +27,8 @@ public abstract class Rygel.PreferencesSection : GLib.Object {
+ 
+     public string name;
+ 
+-    public PreferencesSection (WritableUserConfig config,
+-                               string             name) {
++    protected PreferencesSection (WritableUserConfig config,
++                                  string             name) {
+         this.name = name;
+         this.config = config;
+     }
+-- 
+2.24.1
+
