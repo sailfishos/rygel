@@ -1,1 +1,0 @@
-../src/rygel/rygel-user-config.vala

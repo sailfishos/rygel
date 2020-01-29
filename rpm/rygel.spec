@@ -1,12 +1,12 @@
 Name:          rygel
 Version:       0.32.1
-Release:       1%{?dist}
+Release:       1
 Summary:       A collection of UPnP/DLNA services
 
 Group:         Applications/Multimedia
 License:       LGPLv2+
-URL:           http://live.gnome.org/Rygel
-Source0:       ftp://ftp.gnome.org/pub/GNOME/sources/%{name}/0.32/%{name}-%{version}.tar.xz
+URL:           https://wiki.gnome.org/Projects/Rygel
+Source0:       %{name}-%{version}.tar.xz
 
 BuildRequires: gobject-introspection-devel >= 1.36
 BuildRequires: desktop-file-utils
@@ -53,7 +53,7 @@ Requires: tracker
 A plugin for rygel to use tracker to locate media on the local machine.
 
 %prep
-%setup -q -n %{name}-%{version}/%{name}
+%autosetup -n %{name}-%{version}/upstream
 
 %build
 echo -n %{version} > .version
