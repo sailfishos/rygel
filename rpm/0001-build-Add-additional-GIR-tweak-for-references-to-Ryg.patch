@@ -1,0 +1,26 @@
+From f43f963415533dde89aea9a2231a1ebb2192d327 Mon Sep 17 00:00:00 2001
+From: Rico Tzschichholz <ricotz@ubuntu.com>
+Date: Mon, 29 Apr 2019 13:57:21 +0200
+Subject: [PATCH] build: Add additional GIR tweak for references to
+ RygelCore.IconInfo
+
+---
+ src/librygel-server/Makefile.am | 1 +
+ src/librygel-server/meson.build | 3 ++-
+ 2 files changed, 3 insertions(+), 1 deletion(-)
+
+diff --git a/src/librygel-server/Makefile.am b/src/librygel-server/Makefile.am
+index c24c569..8b96e0a 100644
+--- a/src/librygel-server/Makefile.am
++++ b/src/librygel-server/Makefile.am
+@@ -47,6 +47,7 @@ $(builddir)/RygelServer-2.6.gir: $(srcdir)/Rygel-2.6.gir
+ 		-e 's,namespace name="Rygel",namespace name="RygelServer",g' \
+ 		-e 's,RygelServer\.Plugin,RygelCore.Plugin,g' \
+ 		-e 's,RygelServer\.MediaDevice,RygelCore.MediaDevice,g' \
++		-e 's,RygelServer\.IconInfo,RygelCore.IconInfo,g' \
+ 		-e 's,<package name="rygel-server-2.6"/>,<include name="RygelCore" version="2.6"/>\n<package name="rygel-server-2.6"/>,' \
+ 		$< >$@
+ GIRS = RygelServer-2.6.gir
+-- 
+1.8.3-rc3
+

@@ -1,12 +1,16 @@
+%global apiver  2.6
+
 Name:          rygel
-Version:       0.32.1
-Release:       1%{?dist}
+Version:       0.36.2
+Release:       1
 Summary:       A collection of UPnP/DLNA services
 
-Group:         Applications/Multimedia
 License:       LGPLv2+
-URL:           http://live.gnome.org/Rygel
-Source0:       ftp://ftp.gnome.org/pub/GNOME/sources/%{name}/0.32/%{name}-%{version}.tar.xz
+URL:           https://wiki.gnome.org/Projects/Rygel
+Source0:       %{name}-%{version}.tar.xz
+Patch0:        0001-Constructors-of-abstract-classes-should-not-be-publi.patch
+Patch1:        0001-renderer-Fix-type-argument-mismatch.patch
+Patch2:        0001-build-Add-additional-GIR-tweak-for-references-to-Ryg.patch
 
 BuildRequires: gobject-introspection-devel >= 1.36
 BuildRequires: desktop-file-utils
@@ -36,7 +40,6 @@ media to format that client devices are capable of handling.
 
 %package devel
 Summary: Development package for %{name}
-Group: Development/Libraries
 Requires: %{name} = %{version}-%{release}
 Requires: pkgconfig
 
@@ -45,7 +48,6 @@ Files for development with %{name}.
 
 %package tracker
 Summary: Tracker plugin for %{name}
-Group: Applications/Multimedia
 Requires: %{name} = %{version}-%{release}
 Requires: tracker
 
@@ -53,12 +55,12 @@ Requires: tracker
 A plugin for rygel to use tracker to locate media on the local machine.
 
 %prep
-%setup -q -n %{name}-%{version}/%{name}
+%autosetup -p1 -n %{name}-%{version}/upstream
 
 %build
 echo -n %{version} > .version
 echo -n %{version} > .tarball-version
-%autogen release --enable-tracker-plugin --disable-silent-rules --with-media-engine=simple --disable-strict-valac --disable-lms-plugin
+%autogen release --enable-tracker-plugin --disable-silent-rules --with-media-engine=simple --disable-strict-valac --disable-lms-plugin --disable-example-plugins
 
 make %{?_smp_mflags} V=1
 
@@ -81,36 +83,34 @@ rm -rf %{buildroot}/%{_datadir}/icons/hicolor/*/apps/rygel*
 /sbin/ldconfig
 
 %files -f %{name}.lang
+%license COPYING
 %config %{_sysconfdir}/rygel.conf
 %{_bindir}/rygel
 %{_libdir}/librygel*.so.*
-%{_libdir}/rygel-2.6/engines/*
-%{_libdir}/rygel-2.6/plugins/external.plugin
-%{_libdir}/rygel-2.6/plugins/librygel-external.so
-%{_libdir}/rygel-2.6/plugins/librygel-mpris.so
-%{_libdir}/rygel-2.6/plugins/mpris.plugin
-%{_libdir}/rygel-2.6/plugins/librygel-ruih.so
-%{_libdir}/rygel-2.6/plugins/ruih.plugin
-#%{_libdir}/rygel-2.6/plugins/librygel-media-export.so
-#%{_libdir}/rygel-2.6/plugins/librygel-playbin.so
-#%{_libdir}/rygel-2.6/plugins/media-export.plugin
-#%{_libdir}/rygel-2.6/plugins/playbin.plugin
-%{_libdir}/girepository-1.0/RygelCore-2.6.typelib
-%{_libdir}/girepository-1.0/RygelRenderer-2.6.typelib
-%{_libdir}/girepository-1.0/RygelServer-2.6.typelib
+%{_libdir}/rygel-%{apiver}/engines/*
+%{_libdir}/rygel-%{apiver}/plugins/external.plugin
+%{_libdir}/rygel-%{apiver}/plugins/librygel-external.so
+%{_libdir}/rygel-%{apiver}/plugins/librygel-mpris.so
+%{_libdir}/rygel-%{apiver}/plugins/mpris.plugin
+%{_libdir}/rygel-%{apiver}/plugins/librygel-ruih.so
+%{_libdir}/rygel-%{apiver}/plugins/ruih.plugin
+%{_libdir}/girepository-1.0/RygelCore-%{apiver}.typelib
+%{_libdir}/girepository-1.0/RygelRenderer-%{apiver}.typelib
+%{_libdir}/girepository-1.0/RygelServer-%{apiver}.typelib
 %{_datadir}/rygel/
 %{_datadir}/dbus-1/services/org.gnome.Rygel1.service
 %{_libdir}/systemd/user/rygel.service
 
 %files tracker
-%{_libdir}/rygel-2.6/plugins/librygel-tracker.so
-%{_libdir}/rygel-2.6/plugins/tracker.plugin
+%license COPYING
+%{_libdir}/rygel-%{apiver}/plugins/librygel-tracker.so
+%{_libdir}/rygel-%{apiver}/plugins/tracker.plugin
 
 %files devel
 %{_libdir}/librygel-*.so
-%{_includedir}/rygel-2.6
+%{_includedir}/rygel-%{apiver}
 %{_libdir}/pkgconfig/rygel*.pc
 %{_datadir}/vala/vapi/rygel-*
-%{_datadir}/gir-1.0/RygelCore-2.6.gir
-%{_datadir}/gir-1.0/RygelRenderer-2.6.gir
-%{_datadir}/gir-1.0/RygelServer-2.6.gir
+%{_datadir}/gir-1.0/RygelCore-%{apiver}.gir
+%{_datadir}/gir-1.0/RygelRenderer-%{apiver}.gir
+%{_datadir}/gir-1.0/RygelServer-%{apiver}.gir
