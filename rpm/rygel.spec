@@ -11,6 +11,7 @@ Source0:       %{name}-%{version}.tar.xz
 Patch0:        0001-Constructors-of-abstract-classes-should-not-be-publi.patch
 Patch1:        0001-renderer-Fix-type-argument-mismatch.patch
 Patch2:        0001-build-Add-additional-GIR-tweak-for-references-to-Ryg.patch
+Patch3:        0001-build-Allow-building-with-gettext-0.20-or-greater.patch
 
 BuildRequires: gobject-introspection-devel >= 1.36
 BuildRequires: desktop-file-utils

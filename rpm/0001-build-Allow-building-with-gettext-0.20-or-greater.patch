@@ -1,0 +1,25 @@
+From 1a51f2565f59555e64f8d25761135e97f503cfe8 Mon Sep 17 00:00:00 2001
+From: Matti Kosola <matti.kosola@jolla.com>
+Date: Thu, 12 Mar 2020 14:23:14 +0000
+Subject: [PATCH] build: Allow building with gettext 0.20 or greater
+
+Signed-off-by: Matti Kosola <matti.kosola@jolla.com>
+---
+ configure.ac | 1 +
+ 1 file changed, 1 insertion(+)
+
+diff --git a/configure.ac b/configure.ac
+index 9912de97..8da613e0 100644
+--- a/configure.ac
++++ b/configure.ac
+@@ -456,6 +456,7 @@ RYGEL_CHECK_VALA([$VALA_REQUIRED],
+ 
+ dnl Gettext
+ AM_GNU_GETTEXT_VERSION([0.19.7])
++AM_GNU_GETTEXT_REQUIRE_VERSION([0.19.7])
+ AM_GNU_GETTEXT([external])
+ 
+ GETTEXT_PACKAGE=rygel
+-- 
+2.25.0
+
