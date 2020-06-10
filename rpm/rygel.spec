@@ -29,6 +29,7 @@ BuildRequires: sqlite-devel
 BuildRequires: tracker-devel
 BuildRequires: pkgconfig(libmediaart-2.0)
 BuildRequires: gettext
+BuildRequires: systemd
 Obsoletes: rygel-gst-plugins
 
 %description
@@ -100,7 +101,7 @@ rm -rf %{buildroot}/%{_datadir}/icons/hicolor/*/apps/rygel*
 %{_libdir}/girepository-1.0/RygelServer-%{apiver}.typelib
 %{_datadir}/rygel/
 %{_datadir}/dbus-1/services/org.gnome.Rygel1.service
-%{_libdir}/systemd/user/rygel.service
+%{_userunitdir}/rygel.service
 
 %files tracker
 %license COPYING
