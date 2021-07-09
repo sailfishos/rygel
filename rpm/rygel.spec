@@ -1,36 +1,30 @@
-%global apiver  2.6
 
 Name:          rygel
-Version:       0.36.2
+Version:       0.40.1
 Release:       1
 Summary:       A collection of UPnP/DLNA services
 
 License:       LGPLv2+
 URL:           https://wiki.gnome.org/Projects/Rygel
 Source0:       %{name}-%{version}.tar.xz
-Patch0:        0001-Constructors-of-abstract-classes-should-not-be-publi.patch
-Patch1:        0001-renderer-Fix-type-argument-mismatch.patch
-Patch2:        0001-build-Add-additional-GIR-tweak-for-references-to-Ryg.patch
-Patch3:        0001-build-Allow-building-with-gettext-0.20-or-greater.patch
+Patch0:        0001-Completely-disable-doc-generation-because-we-dont-ha.patch
 
-BuildRequires: gobject-introspection-devel >= 1.36
-BuildRequires: desktop-file-utils
-#BuildRequires: pkgconfig(gstreamer-1.0)
-#BuildRequires: pkgconfig(gstreamer-plugins-base-1.0)
+BuildRequires: pkgconfig
+BuildRequires: meson
+BuildRequires: pkgconfig(gobject-introspection-1.0)
 BuildRequires: pkgconfig(systemd)
-BuildRequires: gupnp-devel >= 0.20.14
-BuildRequires: gupnp-av-devel
-BuildRequires: gupnp-dlna-devel
-BuildRequires: libgee-devel
-BuildRequires: libsoup-devel
-#BuildRequires: libunistring-devel
-BuildRequires: libuuid-devel
-BuildRequires: sqlite-devel
-BuildRequires: tracker-devel
 BuildRequires: pkgconfig(libmediaart-2.0)
+BuildRequires: pkgconfig(gupnp-1.2)
+BuildRequires: pkgconfig(gupnp-av-1.0)
+BuildRequires: pkgconfig(gupnp-dlna-2.0)
+BuildRequires: pkgconfig(gdk-pixbuf-2.0)
+BuildRequires: pkgconfig(gee-0.8)
+BuildRequires: pkgconfig(libsoup-2.4)
+BuildRequires: pkgconfig(uuid)
+BuildRequires: pkgconfig(sqlite3)
+BuildRequires: pkgconfig(tracker-sparql-3.0)
 BuildRequires: gettext
-BuildRequires: systemd
-Obsoletes: rygel-gst-plugins
+BuildRequires: desktop-file-utils
 
 %description
 Rygel is a home media solution that allows you to easily share audio, video and
@@ -60,14 +54,11 @@ A plugin for rygel to use tracker to locate media on the local machine.
 %autosetup -p1 -n %{name}-%{version}/upstream
 
 %build
-echo -n %{version} > .version
-echo -n %{version} > .tarball-version
-%autogen release --enable-tracker-plugin --disable-silent-rules --with-media-engine=simple --disable-strict-valac --disable-lms-plugin --disable-example-plugins
-
-make %{?_smp_mflags} V=1
+%meson -Dplugins=tracker3,external,mpris,ruih -Dexamples=false -Dgtk=disabled -Dengines=simple -Dgstreamer=disabled -Dtests=false
+%meson_build
 
 %install
-make install DESTDIR=%{buildroot} INSTALL='install -p'
+%meson_install
 
 #Remove libtool archives.
 find %{buildroot} -name '*.la' -exec rm -f {} ';'
@@ -89,30 +80,30 @@ rm -rf %{buildroot}/%{_datadir}/icons/hicolor/*/apps/rygel*
 %config %{_sysconfdir}/rygel.conf
 %{_bindir}/rygel
 %{_libdir}/librygel*.so.*
-%{_libdir}/rygel-%{apiver}/engines/*
-%{_libdir}/rygel-%{apiver}/plugins/external.plugin
-%{_libdir}/rygel-%{apiver}/plugins/librygel-external.so
-%{_libdir}/rygel-%{apiver}/plugins/librygel-mpris.so
-%{_libdir}/rygel-%{apiver}/plugins/mpris.plugin
-%{_libdir}/rygel-%{apiver}/plugins/librygel-ruih.so
-%{_libdir}/rygel-%{apiver}/plugins/ruih.plugin
-%{_libdir}/girepository-1.0/RygelCore-%{apiver}.typelib
-%{_libdir}/girepository-1.0/RygelRenderer-%{apiver}.typelib
-%{_libdir}/girepository-1.0/RygelServer-%{apiver}.typelib
+%{_libdir}/rygel-*/engines/*
+%{_libdir}/rygel-*/plugins/external.plugin
+%{_libdir}/rygel-*/plugins/librygel-external.so
+%{_libdir}/rygel-*/plugins/librygel-mpris.so
+%{_libdir}/rygel-*/plugins/mpris.plugin
+%{_libdir}/rygel-*/plugins/librygel-ruih.so
+%{_libdir}/rygel-*/plugins/ruih.plugin
+%{_libdir}/girepository-1.0/RygelCore-*.typelib
+%{_libdir}/girepository-1.0/RygelRenderer-*.typelib
+%{_libdir}/girepository-1.0/RygelServer-*.typelib
 %{_datadir}/rygel/
 %{_datadir}/dbus-1/services/org.gnome.Rygel1.service
 %{_userunitdir}/rygel.service
 
 %files tracker
 %license COPYING
-%{_libdir}/rygel-%{apiver}/plugins/librygel-tracker.so
-%{_libdir}/rygel-%{apiver}/plugins/tracker.plugin
+%{_libdir}/rygel-*/plugins/librygel-tracker3.so
+%{_libdir}/rygel-*/plugins/tracker3.plugin
 
 %files devel
 %{_libdir}/librygel-*.so
-%{_includedir}/rygel-%{apiver}
+%{_includedir}/rygel-*
 %{_libdir}/pkgconfig/rygel*.pc
 %{_datadir}/vala/vapi/rygel-*
-%{_datadir}/gir-1.0/RygelCore-%{apiver}.gir
-%{_datadir}/gir-1.0/RygelRenderer-%{apiver}.gir
-%{_datadir}/gir-1.0/RygelServer-%{apiver}.gir
+%{_datadir}/gir-1.0/RygelCore-*.gir
+%{_datadir}/gir-1.0/RygelRenderer-*.gir
+%{_datadir}/gir-1.0/RygelServer-*.gir
