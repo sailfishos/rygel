@@ -1,0 +1,22 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?Matti=20Lehtim=C3=A4ki?= <matti.lehtimaki@jolla.com>
+Date: Mon, 8 Jan 2024 21:19:04 +0200
+Subject: [PATCH] Use simple engine by default
+
+---
+ data/rygel.conf | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/data/rygel.conf b/data/rygel.conf
+index 807f3a86dd355cfa6fe8d6435b3759fb08ff8d18..2a242f03c33e79e7577e3deebeee42d1f4e1e4ab 100644
+--- a/data/rygel.conf
++++ b/data/rygel.conf
+@@ -23,7 +23,7 @@ picture-upload-folder=@PICTURES@
+ 
+ # Default media engine to load. If not specified, the engine directory is
+ # searched recursively and the first engine found is loaded.
+-media-engine=librygel-media-engine-gst.so
++media-engine=librygel-media-engine-simple.so
+ 
+ # List of network interfaces to attach rygel to. You can also use network IP or
+ # even ESSID for wireless networks on Linux. Leave it blank for dynamic

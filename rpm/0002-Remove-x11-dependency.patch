@@ -1,0 +1,37 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?Matti=20Lehtim=C3=A4ki?= <matti.lehtimaki@jolla.com>
+Date: Fri, 5 Jan 2024 18:49:03 +0200
+Subject: [PATCH] Remove x11 dependency
+
+---
+ src/rygel/application.vala | 4 ----
+ src/rygel/meson.build      | 2 +-
+ 2 files changed, 1 insertion(+), 5 deletions(-)
+
+diff --git a/src/rygel/application.vala b/src/rygel/application.vala
+index 0c7a3a4766610974b3b5f0344c87915922869ed2..ee1cff34163d4d22859330f003105f7c7e28d580 100644
+--- a/src/rygel/application.vala
++++ b/src/rygel/application.vala
+@@ -316,10 +316,6 @@ public class Rygel.Application : GLib.Application {
+     public static int main(string[] args) {
+         Environment.set_application_name (_(BuildConfig.PACKAGE_NAME));
+ 
+-        // Required to prevent VA-API decoders from crashing when running inside a
+-        // X11 session. Does nothing if not on X11.
+-        X.init_threads ();
+-
+         Intl.setlocale (LocaleCategory.ALL, "");
+         Intl.bindtextdomain (BuildConfig.GETTEXT_PACKAGE,
+                              BuildConfig.LOCALEDIR);
+diff --git a/src/rygel/meson.build b/src/rygel/meson.build
+index 0754d588d39da2deb393996a5222b1484711ad9a..4705ad3bcb3c0d112cd9f522c8504e8376ba3d1b 100644
+--- a/src/rygel/meson.build
++++ b/src/rygel/meson.build
+@@ -6,6 +6,6 @@ rygel_sources = [
+ executable('rygel',
+            rygel_sources,
+            c_args : ['-DG_LOG_DOMAIN="Rygel"'],
+-           dependencies : rygel_deps + [build_config, rygel_core, rygel_server, dependency('x11')],
++           dependencies : rygel_deps + [build_config, rygel_core, rygel_server],
+            install: true
+            )

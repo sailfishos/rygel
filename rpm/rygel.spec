@@ -1,25 +1,28 @@
 
 Name:          rygel
-Version:       0.40.1
+Version:       0.42.5
 Release:       1
 Summary:       A collection of UPnP/DLNA services
 
 License:       LGPLv2+
 URL:           https://wiki.gnome.org/Projects/Rygel
 Source0:       %{name}-%{version}.tar.xz
-Patch0:        0001-Completely-disable-doc-generation-because-we-dont-ha.patch
+Patch0:        0001-Completely-disable-doc-generation-because-we-don-t-h.patch
+Patch1:        0002-Remove-x11-dependency.patch
+Patch2:        0003-Use-simple-engine-by-default.patch
+Patch3:        0004-Use-hostname-as-title-for-the-server.patch
 
 BuildRequires: pkgconfig
 BuildRequires: meson
 BuildRequires: pkgconfig(gobject-introspection-1.0)
 BuildRequires: pkgconfig(systemd)
 BuildRequires: pkgconfig(libmediaart-2.0)
-BuildRequires: pkgconfig(gupnp-1.2)
+BuildRequires: pkgconfig(gupnp-1.6)
 BuildRequires: pkgconfig(gupnp-av-1.0)
 BuildRequires: pkgconfig(gupnp-dlna-2.0)
 BuildRequires: pkgconfig(gdk-pixbuf-2.0)
 BuildRequires: pkgconfig(gee-0.8)
-BuildRequires: pkgconfig(libsoup-2.4)
+BuildRequires: pkgconfig(libsoup-3.0)
 BuildRequires: pkgconfig(uuid)
 BuildRequires: pkgconfig(sqlite3)
 BuildRequires: pkgconfig(tracker-sparql-3.0)
@@ -65,8 +68,7 @@ find %{buildroot} -name '*.la' -exec rm -f {} ';'
 
 %find_lang %{name}
 
-rm %{buildroot}/%{_datadir}/applications/rygel.desktop
-rm %{buildroot}/%{_datadir}/applications/rygel-preferences.desktop
+rm -f %{buildroot}/%{_datadir}/applications/rygel.desktop
 rm -rf %{buildroot}/%{_datadir}/icons/hicolor/*/apps/rygel*
 
 %post
