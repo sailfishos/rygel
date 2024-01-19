@@ -1,0 +1,42 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?Matti=20Lehtim=C3=A4ki?= <matti.lehtimaki@jolla.com>
+Date: Fri, 19 Jan 2024 11:04:53 +0200
+Subject: [PATCH] Use hostname as title for the server
+
+Real name is not defined in Sailfish OS.
+---
+ data/rygel.conf | 8 ++++----
+ 1 file changed, 4 insertions(+), 4 deletions(-)
+
+diff --git a/data/rygel.conf b/data/rygel.conf
+index 2a242f03c33e79e7577e3deebeee42d1f4e1e4ab..349c506b4b46e136c0e1ee3ecb7a2275adeef583 100644
+--- a/data/rygel.conf
++++ b/data/rygel.conf
+@@ -104,7 +104,7 @@ share-pictures=true
+ share-videos=true
+ share-music=true
+ strict-sharing=false
+-title=@REALNAME@'s media on @PRETTY_HOSTNAME@
++title=@PRETTY_HOSTNAME@
+ 
+ [Tracker]
+ enabled=true
+@@ -113,15 +113,15 @@ share-pictures=true
+ share-videos=true
+ share-music=true
+ strict-sharing=false
+-title=@REALNAME@'s media on @PRETTY_HOSTNAME@
++title=@PRETTY_HOSTNAME@
+ 
+ [LMS]
+ enabled=false
+-title=@REALNAME@'s media on @PRETTY_HOSTNAME@
++title=@PRETTY_HOSTNAME@
+ 
+ [MediaExport]
+ enabled=true
+-title=@REALNAME@'s media on @PRETTY_HOSTNAME@
++title=@PRETTY_HOSTNAME@
+ # List of URIs to export. Following variables are automatically substituted by
+ # the appropriate XDG standard media folders by Rygel for you.
+ #
